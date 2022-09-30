@@ -46,9 +46,14 @@ Here are some of our experiences with the new, improved Wasmtime:
           than `5x throughput improvement in end-to-end stream
           processing` when compared to Java-based platforms like Kafka.
 
+* **Fermyon -- 6 months in production**
+  - Fermyon's Spin has been using Wasmtime since its release in March
+    2022. Since then, Fermyon has found tens of thousands of WebAssembly
+          binaries can run in a single Spin instance while keeping
+          startup times under a millisecond.
 
-
-
+* **Embark -- 2 years in production**
+  - Embark has been using Wasmtime in their 
 
 
 
