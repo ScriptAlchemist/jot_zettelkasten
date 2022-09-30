@@ -30,7 +30,52 @@ Here are some of our experiences with the new, improved Wasmtime:
 * **Fastly -- 6 months in production**
   - Fastly switched to Wasmtime from another WebAssembly engine in March
     2022. Fastly also saw a `~50% improvement in execution time`. In
-          addition 
+          addition, Fastly saw a `72% to 163% increase in
+          requests-per-second` it could serve. Fastly has since served
+          `trillions of request` using Wasmtime.
+
+* **DFINITY -- 16 months in production**
+  - DFINITY launched the Internet Cimputer blockchain using Wasmtime in
+    May 2021. Since then, the Internet Computer has executed `1
+    quintillion (10^18) instructions for over 150,000 smart contracts`
+    without any production issues.
+
+* **InfinyOn -- 14 months in production**
+  - InfinyOn Cloud has been using Wasmtime in production since July
+    2021. With Wasmtime, InfinyOne has been able to deliver a greater
+          than `5x throughput improvement in end-to-end stream
+          processing` when compared to Java-based platforms like Kafka.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
