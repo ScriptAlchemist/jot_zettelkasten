@@ -27,8 +27,10 @@ Here are some of our experiences with the new, improved Wasmtime:
 * **Shopify -- 14 months in production**
   - Shopify switched to Wasmtime for another WebAssembly engine in July 2021. With the switch, Shopify saw an `average execution performace improvements of ~50%.`
 
-
-
+* **Fastly -- 6 months in production**
+  - Fastly switched to Wasmtime from another WebAssembly engine in March
+    2022. Fastly also saw a `~50% improvement in execution time`. In
+          addition 
 
 
 
