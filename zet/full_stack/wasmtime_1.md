@@ -168,6 +168,100 @@ code.](../../images/wasmtime_1.0/use-case_tee.png)
 
 * The browser is a good example of a portable client, and many
   applications can just run in the browser.
+* Sometimes you need a portable client that lives outside of the
+  browser--whether that's for performance or for a richer user
+  experience.
+* For these cases, you can create your own portable client using a
+  WebAssembly runtime, like [the BBC did for their
+  iPlayer](https://medium.com/bbc-design-engineering/building-a-webassembly-runtime-for-bbc-iplayer-and-enhanced-audience-experiences-7087455808ef).
+* The WebAssembly runtime takes care of the portability and making sure
+  that guest code can run on different architectures.
+* You can focus on the features that you want your client to provide.
+
+![An application window with a WebAssembly logo in it that is going to 3
+different devices: a phole, a laptop, and a VR
+headset](../../images/wasmtime_1.0/use-case_portable-client.png)
+
+Those are some use cases where you might want to use Wasmtime. Now let's
+talk about how we made sure Wasmtime could perform well for these use
+cases.
+
+## How we make Wasmtime super fast
+
+For almost all of these use cases, speed makes a difference. That's why
+we focus so much on performance.
+
+As [I\'ve talked about
+before](https://bytecodealliance.org/articles/making-javascript-run-fast-on-webassembly#two-places-a-js-engine-spends-its-time),
+there are two parts of performance that we think about when we're making
+optimizations--instantiation and runtime.
+
+If you want all of the details on how we made both of these fast, you
+can read [Chris Fallin\'s blog post about Wasmtime
+performance](https://bytecodealliance.org/articles/wasmtime-10-performance),
+but here's a basic breakdown.
+
+### Instantiation
+
+Instantiation is the time it takes to go from new work arriving (like a
+web request, a plugin invocation, or a database query) to having an
+instance of the WebAssembly module that is actually ready to run, with
+all of its memory and other state prepared for it.
+
+This speed is really important for use cases where you're scaling up and
+down quickly, like some microservice architectures and serverless.
+
+As Chris points out in his post. with some of our recent changes:
+
+> Instantiation time of SpiderMonkey.wasm went from about 2
+milliseconds... to 5 microseconds, or 400 times faster, not bad!
+
+![A person saying '400 times faster... no
+bad!'](../../images/wasmtime_1.0/article-reference-chris.png)
+
+And that's just one example.
+
+We achieved these results mostly bu using two different kinds of
+optimizations: virtual memory tricks and lazy initializations. In both
+cases, what we're doing it putting off work until it really needs to be
+done.
+
+With virtual memory tricks, we don't need to create a new memory every
+time we create a new instance. Instead, we depend on operation systems
+features to share as much memory between instances as we can, and only
+create a new page of memory when one of those instances needs to change
+data.
+
+We apply this same kind of thinking to initialization. A module could
+have lots of functions and state that it declares but won't use. So we
+put off initialization of things like function tables until the function
+is actually used. This speeds up start-up, and had the nice benefit of
+reducing the overall work that needs to be done in cases where functions
+or other state aren't used.
+
+So we got a lot of speed ups in the instantiation phase just by delaying
+work until it needed to get done. But we didn't just need to make
+instantiation fast. We also need to make runtime fast.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
