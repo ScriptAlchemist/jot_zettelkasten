@@ -243,17 +243,90 @@ So we got a lot of speed ups in the instantiation phase just by delaying
 work until it needed to get done. But we didn't just need to make
 instantiation fast. We also need to make runtime fast.
 
+## Runtime
 
+Runtime is how fast the code actually runs once it has started up. This
+is especially important when you have long-running code, like portable
+clients.
 
+We've been able to improve runtime performance with a variety of
+changes. Some of the biggest wins have come from changes we've made to
+our complier, Cranelife, which takes the WebAssembly code and turns it
+into machine code.
 
+For example, the [new register
+allocator](https://cfallin.org/blog/2022/06/09/cranelift-regalloc2/)
+makes SpiderMonkey.wasm run ~5% faster. And the new backend framework
+(which chooses the best machine instructions to use for blocks of code)
+makes SpiderMonkey.wasm run 22% faster than that!
 
+We have some experiments that we're doing here, as well. For example,
+we've started work on a new mid-end optimization framework. In early
+prototypes, we're already seeing a 13% speed improvement when we run
+SpiderMonkey.wasm.
 
+So that's how we drive speed improvements. But what about safety?
 
+## How we make Wasmtime super-safe
 
+Security is a big driver for us in the Bytecode Alliance. We believe
+that WebAssembly is uniquely positioned to solve some of the biggest
+emerging security threats, and we're committed to making sure the it
+does.
 
+We've been pushing for WebAssembly proposals that make it easier for
+developers to create secure-by-default applications. But none of that
+matters if the runtime that's running the code isn't itself secure.
 
+That's why we put so much effort into the security of Wasmtime itself.
 
+Nick Fitzgerald wrote a [great article about all the different ways we
+make sure Wasmtime is
+secure](https://bytecodealliance.org/articles/security-and-correctness-in-wasmtime),
+and you should read the for more detail, but here are a few examples:
 
+* **We have secured our supply chain using cargo vet.** We're already
+  using a memory-safe language, which helps us avoid introducing
+  vulnerabilities that attackers could exploit. But that safety doesn't
+  necessarily protect us from malicious code that attackers slip into a
+  dependency. To protect against this, we're using [cargo
+  vet](https://mozilla.github.io/cargo-vet/) to ensure that dependencies
+  are manually reviewed by a trusted auditor.
+* **We've put a lot of work into fuzzing.** Fuzzing is a way to find
+  hard-to-reason-through bugs in your code by just throwing a bunch of
+  pseudo-randomly generated input at it. As Nick says, "Our pervasive
+  fuzzing is probably the biggest single contributing factor towards
+  Wasmtime's code quality. We fuzz because writing tests by hand, while
+  necessary, is not enough."
+* **We're working on formally verifying security-critical parts of the
+  code.** With formal verification, you can actually prove that a
+  program does what it's supposed to do, just like a proof in math
+  class. the gives us extremely high confidence in the relevant code,
+  and helps us pinpoint exactly where the issue is if we accidentally
+  introduce new bugs.
+
+![A person shouting 'Fuzz all the
+things!'](../../images/wasmtime_1.0/article-reference-nick.png)
+
+So those are some of the ways that we make Wasmtime more secure.
+
+This is something we feel really strongly about--all WebAssembly
+runtimes should be following the [best practices that Nick lays
+out](https://bytecodealliance.org/articles/security-and-correctness-in-wasmtime)
+and more to make sure they are secure. That's the only way we can have
+the kind of secure WebAssembly ecosystem we all want.
+
+## What comes after 1.0?
+
+Now that we're at 1.0, we plan to keep a frequent and predictable cycle
+of stable releases. We'll release a new version of Wasmtime every month.
+
+Each release of Wasmtime will bump the major version number. This allows
+us to keep Wasmtimes's version number in sync with that of the
+language-specific embeddings. For example, if you use wasmtime-py 7.0,
+you can be sure that you're using Wasmtime 7.0. You can [learn more about the release process here.](https://docs.wasmtime.dev/stability-release.html)
+
+> Copyright 2019-2021 the Bytecode Alliance contributors
 
 
 
