@@ -1,14 +1,14 @@
 # System Design
 
-1. Use cases + Constraints/estimations/bottlenecks
+* Use cases + Constraints/estimations/bottlenecks
   - brainstorm; MVP
   - narrow it down
-  - # of users
+  - number of users
   - amount of data
   - requests per second
-2. Entity Relationship Diagram
-3. Rationale + calculations for core components
-4. Diagram -scale up the system
+* Entity Relationship Diagram
+* Rationale + calculations for core components
+* Diagram -scale up the system
   - client layer
   - application layer
   - database layer
@@ -58,7 +58,7 @@ Design Amazon Suggestion Carousel
 
 ### Constraints/Estimations/Bottlenecks
 
-* # of users: powers of 10
+* Number of users: powers of 10
   - 100 million users => 10 million daily users
   - 1 million concurrent users
   - Requests per second
