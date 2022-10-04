@@ -26,6 +26,8 @@ Design Amazon Suggestion Carousel
 * It's a carousel the recommend other products that are related.
   - related but not same all the time
 
+---
+
 ## Use Cases
 
 * Appears when viewing product page - 1
@@ -66,6 +68,8 @@ Design Amazon Suggestion Carousel
 * Peak conditions
   - Holidays
   - Prime Day
+
+---
 
 ## Entity Relationship Diagram
 
@@ -121,5 +125,58 @@ Design Amazon Suggestion Carousel
 
 ### Calculation
 
+2.06 TB
+1.60 TB
+320 GB
+  5 TB needed
+
+---
+
+## Rationale + Calculations
+
+* 200,000 req/sec <= load
+  1 GB RAM EC2 instances on AWS - free tier
+  4 GB RAM EC2 - paid tier
+    - use 2 GB RAM => 2000 threads
+    - 1 MB required per thread
+    - 200,000 / 2,000 => 100 machines
+    - 2x redundancy
+
+* Consistency vs Availability - CAP Theorem
+  - availability
+
+* Read vs Write
+  - read
+  - replication
+  - 
+
+* Popular Products
+  - Yes
+  - use a cache
+
+---
+
+## Scale the Design
+
+Client <-> Application <-> Database
+
+* Client
+  - load balancer: round robin, and more
+    - Have a backup load balancer
+* Application
+  - 200 machines for 200,000 per second
+* Database
+   write -> Primary
+     -> 2nd
+     -> 2nd
+  read -> 2nd
+  - exact copies on secondaries
+  - min 3 secondaries
+  - scale out clusters
+    - cluster is main database + 3 or more secondaries
+    - split up ids across machines: `shards`
+    - how to tell which shard to send it to
+      - table
+      - hashing
 
 
