@@ -178,5 +178,12 @@ Client <-> Application <-> Database
     - how to tell which shard to send it to
       - table
       - hashing
+  * caching strategy
+
+## Study Materials
+
+[system design](https://github.com/donnemartin/system-design-primer)
+  - use flash cards: Anki flashcards
+
 
 
