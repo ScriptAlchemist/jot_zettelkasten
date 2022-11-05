@@ -1,4 +1,4 @@
-# Outco Salary Negotiation
+# Salary Negotiation
 
 Today we figure out how to talk salary negotiations today. It's
 something I have needed to do.

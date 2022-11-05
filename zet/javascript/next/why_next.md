@@ -1,5 +1,7 @@
 # What is Next.JS
 
+[Academind Next.js Crash Course for Beginners
+2021](https://youtu.be/MFuwkrseXVE)
 The React framework for production. But what does this mean?
 
 Next offers a lot of features to make building full stack frameworks for
