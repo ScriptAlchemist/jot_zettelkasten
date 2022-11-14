@@ -48,6 +48,16 @@ while(t < topNum) {
 The goal of this is to be able to see the minimum time between two dates
 if possible.
 
+* getTime: for milliseconds
+* getUnixTime: for seconds
+
+
+
+
+
+
+
+
 
 
 
