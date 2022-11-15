@@ -275,9 +275,55 @@ The following Header Parameter names for use in JWSs are registered in the IANA 
 
 As indicated by the common registry, JWSs and JWEs share a common Header Parameter space; when a parameter is used by both specifications, its usage must be compatible between the specifications.
 
+### "alg" (Algorithm) Header Parameter
 
+The "alg" (algorithm) Header Parameter identifies the cryptographic
+algorithm used to secure the JWS. The JWS Signature value is not valid
+if the "alg" value does not represent a supported algorithm or if there
+is not a key for use with that algorithm associated with the party that
+digitally signed of MACed the content. "alg" values should either be
+registered in the IANA "JSON Web Signature and Encryption Algorithms"
+registry established by
+[JWA](https://www.rfc-editor.org/rfc/rfc7515#ref-JWA) or be a value that
+contains a Collision-Resistant Name. The "alg" value is a case-sensitive
+ASCII string containing a StringOrURI value. This Header Parameter MUST
+be present and MUST be understood and processed by implementations.
 
+A list of defined "alg" avlues for this use can be found in the IANA
+"JSON Web Signature and Encryption Algorithms" registry established by
+[JWA](https://www.rfc-editor.org/rfc/rfc7515#ref-JWA); the initial
+contents of this registy are the values defined in Sections 3.1 of
+[JWA](https://www.rfc-editor.org/rfc/rfc7515#ref-JWA).
 
+### "jku" (JWK Set URL) Header Parameter
+
+The "jku" (JWK Set URL) Header Parameter is a URI
+[RFC3986](https://www.rfc-editor.org/rfc/rfc3986) that refers to a
+resource for a set of JSON-encoded public Keys, one of which corresponds
+to the key used to digitally sign the JWS. The keys MUST be encoded as a
+JWK Set [JWK](https://www.rfc-editor.org/rfc/rfc7515#ref-JWK). The
+protocol used to acquire the resource MUST provide integrity
+protection; an HTTP GET request to retrieve the JWK Set MUST use
+Transport Layer Security (TLS)
+[RFC2818](https://www.rfc-editor.org/rfc/rfc2818)
+[RFC5246](https://www.rfc-editor.org/rfc/rfc5246); and the identity of
+the server MUST be validated, as per [Section 6 of RFC
+6125](https://www.rfc-editor.org/rfc/rfc6125#section-6)
+[RFC6125](https://www.rfc-editor.org/rfc/rfc6125). Also, see [Section
+8](https://www.rfc-editor.org/rfc/rfc7515#section-8) on TLS
+requirements. Use of this Header Parameter is OPTIONAL.
+
+### "jwk" (JSON Web Key) Header Parameter
+
+The "jwk" (JSON Web Key) Header Parameter is the public key that
+corresponds to the key used to digitally sign the JWS. This key is
+represented as a JSON Web Key
+[JWK](https://www.rfc-editor.org/rfc/rfc7515#ref-JWK). Use of this
+Header Parameter is OPTIONAL.
+
+### "kid" (Key ID) Header Parameter
+
+The "kid" (key ID) Header Parameter is a hint indication which key was used to secure the JWS. 
 
 
 
