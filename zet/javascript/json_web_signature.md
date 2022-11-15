@@ -148,15 +148,132 @@ These terms are defined by this specification:
 * `Base64url Encoding`: Base64 encoding using the URL - and filename-safe character set defined in [Section 5 of RFC 4648](https://www.rfc-editor.org/rfc/rfc4648#section-5) [RFC4648](https://www.rfc-editor.org/rfc/rfc4648), with all trailing '=' characters omitted (as permitted by [Section 3.2](https://www.rfc-editor.org/rfc/rfc7515#section-3.2)) and without the inclusion of any line breaks, white space, or other additional characters. Note that the base64url encoding of the empty octet sequence its the empty string. (See `Appendix C` for notes on implementing base64url encoding without padding.)
 * `JWS Signing Input`: The input to the digital signature or MAC computation. Its value is ASCII(BASE64URL(UTF8(JWS Protected Header)) || '.' || BASE64URL(JWS Payload)).
 * `JWS Compact Serialization`: A representation of the JWS and a compact, URL-safe string.
-* `JWS JSON Serialization`: A representation of the JWS as a JSON object.
+* `JWS JSON Serialization`: A representation of the JWS as a JSON
+  object. Unlike the JWS Compact Serialization, the JWS JSON
+  Serialization enables multiple digital signatures and/or MACs to be
+  applied to the same content. This representation is neither optimized
+  for compactness nor URL-safe.
+* `Unsecured JWS`: A JWS that provides not integrity protection.
+  Unsecured JWSs use  the "alg" value "none".
+* `Collision-Resistant Name`: A name in a namespace that enables names
+  to be allocated in a manner such that they are highly unlikely to
+  collide with other names. Examples of collision-resistant namespaces
+  include: Domain Names, Object Identifiers (OIDs) as defined in the
+  ITU-T X.660 and X.670 Recommendation series, and Universally Unique
+  Identifiers (UUIDs) [RFC4122](https://www.rfc-editor.org/rfc/rfc4122).
+  When using an administratively delegated namespace, the definer of a
+  name needs to take reasonable precautions to ensure they are in
+  control of the portion of the namespace they use to define the name.
+* `StringOrURI`: A JSON string value, with the additional requirement that while arbitrary string values MAY be used, any value containing a ":" character MUST be a URI [RFC3986](https://www.rfc-editor.org/rfc/rfc3986). StringOrURI values are compared as case-sensitive strings with no transformations of canonicalizations applied.
 
+The terms "JSON Web Encryption (JWE)", "JWE Compact Serialization", and "JWE JSON Serialization" are defined by the JWE specification [JWE](https://www.rfc-editor.org/rfc/rfc7515#ref-JWE).
 
+The terms "Digital Signature" and "Message Authentication Code (MAC)" are defined by the "Internet Security Glossary, Version 2" [RFC4949](https://www.rfc-editor.org/rfc/rfc4949).
 
+## JSON Web Signature (JWS) Overview
 
+JWS represents digitally signed of MACed content using JSON date structures and base64url encoding. These JSON data structures MAY contain white space and/or line break before or after any JSON value or structural characters, in accordance with [Section 2 of RFC 7159](https://www.rfc-editor.org/rfc/rfc7159#section-2) [RFC7159](https://www.rfc-editor.org/rfc/rfc7159). A JWS represents these logical values (each of which is defined in [Section 2](https://www.rfc-editor.org/rfc/rfc7515#section-2)):
 
+* JOSE Header
+* JWS Payload
+* JWS Signature
 
+For a JWS, the JOSE Header members are the union of the members of these values( each of which is defined in [Section 2](https://www.rfc-editor.org/rfc/rfc7515#section-2)
 
+* JWS Protected Header
+* JWS Unprotected Header
 
+This document defines two serializations for JWSs: a compact, URL-safe serialization called the JWS Compact Serialization and a JSON serialization called the JWS JSON Serialization. In both serializations, the JWS Protected Header, JWS Payload, and JWS Signature are base64url encoded, since JSON lacks a way to directly represent arbitrary octet sequences.
+
+### JWS Compact Serialization Overview
+
+In the JWS Compact Serialization, no JWS Unprotected Header is used. The this case, the JOSE Header and the JWS Protected Header are the same.
+
+In the JWS Compact Serialization, a JWS is represented as the concatenation:
+
+```
+BASE64URL(UTF8(JWS Protected Header)) || '.' ||
+BASE64URL(JWS Payload) || '.' ||
+BASE64URL(JWS Signature)
+```
+
+### JWS JSON Serialization Overview
+
+In the JWS JSON Serialization, one of both of the JWS Protected Header and JWS Unprotected Header MUST be present. In this case, the members of the JOSE Header are the union of the members of the JWS Protected Header and the JWS Unprotected Header values that are present.
+
+In the JWS JSON Serialization, a JWS is represented as a JSON object containing some of all of these four members.
+
+* `protected`, with the value `BASE64URL(UTF8(JWS Protected Header))`
+* `header`, with the value `JWS Uprotected Header`
+* `payload`, with the value `BASE64URL(JWS Payload)`
+* `signature`, with the value `BASE64URL(JWS Signature)`
+
+The three base64url-encoded result strings and the JWS Unprotected Header value are represented as members within a JSON object. The inclusion of some of these values is OPTIONAL. The JWS JSON Serialization can also represent multiple signature and/or MAC values, rather than just one.
+
+### Example JWS
+
+This section provides an example of a JWS. Its computation is described in more detail in Appendix A, including specifying the exact octet sequences representing the JSON values used and the key value used.
+
+The following example JWS Protected Header declares that the encoded object is a JSON Web Token [JWT](https://www.rfc-editor.org/rfc/rfc7515#ref-JWT) and the JWS Protected Header and the JWS Payload are secured using the HMAC SHA-256 [RFC2104](https://www.rfc-editor.org/rfc/rfc2104) [SHS](https://www.rfc-editor.org/rfc/rfc7515#ref-SHS) algorithm:
+
+```json
+{"typ":"JWT",
+ "alg":"HS256"}
+```
+
+Encoding this JWS Protected Header as `BASE64URL(UTF8(JWS Protected Header))` gives this value:
+
+```
+eyJ0eXAiOiJKV1QiLA0KICJhbGciOiJIUzI1NiJ9
+```
+
+The UTF-8 representation of the following JSON object is used as the JWS Payload. (Note that the payload can be any content and need not be representation of a JSON object.
+
+```json
+{"iss":"joe",
+ "exp":1300819380,
+ "http://example.com/is_root":true}
+```
+
+Encoding this JWS Payload as `BASE64URL(JWS Payload)` gives this value ( with line breaks for display purposes only):
+
+```
+eyJpc3MiOiJqb2UiLA0KICJleHAiOjEzMDA4MTkzODAsDQogImh0dHA6Ly9leGFt
+cGxlLmNvbS9pc19yb290Ijp0cnVlfQ
+```
+
+Computing the HMAC of the JWS Signing Input `ASCII(BASE64URL(UTF8(JWS Protected Header)) || '.' || BASE64URL(JWS Payload))` with the HMAC SHA-256 algorithm using the key specified in Appendix A and base64url-encoding the result yields this `BASE64URL(JWS Signature)` value:
+
+```
+dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk
+```
+
+Concatenating these value in the order `Header.Payload.Signature` with period ('.') characters between the parts yields this complete JWS representation using the JWS Compact Serialization (with line breaks for display purposes only):
+
+```
+eyJ0eXAiOiJKV1QiLA0KICJhbGciOiJIUzI1NiJ9
+.
+eyJpc3MiOiJqb2UiLA0KICJleHAiOjEzMDA4MTkzODAsDQogImh0dHA6Ly9leGFt
+cGxlLmNvbS9pc19yb290Ijp0cnVlfQ
+.
+dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk
+```
+
+See Appendix A for additional examples, including examples using the JWS JSON Serialization.
+
+## JOSE Header
+
+For a JWS, the members of the JSON object(s) representing the JOSE Header describe the digital signature or MAC applied to the JWS Protected Header and the JWS Payload and optionally additional properties of the JWS. The Header Parameter names within the JOSE Header MUST be unique; JWS parsers MUST either reject JWSs with duplicate Header Parameter names or use a JSON parser that returns only the lexically last duplicate member name, as specified in [Section 15.12](https://www.rfc-editor.org/rfc/rfc7515#section-15.12) ("The JSON Object") of ECMAScript 5.1 [ECMAScript](https://www.rfc-editor.org/rfc/rfc7515#ref-ECMAScript).
+
+Implementations are required to understand the specific Header Parameters defined by this specification that are designated as "MUST be understood" and process them in the manner defined in this specification. All other Header Parameters defined by this specification that are not so designated MUST be ignored when not understood. Unless listed as a critical Header Parameter. All Header Parameters not defined by this specification MUST be ignored when not understood.
+
+There are three classes of Header Parameter names: Registered Header Parameter names, Public Header Parameter names, and Private Header Parameter names.
+
+### Registered Header Parameter Names
+
+The following Header Parameter names for use in JWSs are registered in the IANA "JSON Web Signature and Encryption Header Parameters" registry established by [Section 9.1](https://www.rfc-editor.org/rfc/rfc7515#section-9.1), with meanings as defined in the subsections below.
+
+As indicated by the common registry, JWSs and JWEs share a common Header Parameter space; when a parameter is used by both specifications, its usage must be compatible between the specifications.
 
 
 
