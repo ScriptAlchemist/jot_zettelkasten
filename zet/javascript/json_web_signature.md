@@ -1,4 +1,4 @@
-# JSON Web Sgnature (JWS)
+# JSON Web Signature (JWS)
 
 ## Abstract
 
@@ -323,7 +323,72 @@ Header Parameter is OPTIONAL.
 
 ### "kid" (Key ID) Header Parameter
 
-The "kid" (key ID) Header Parameter is a hint indication which key was used to secure the JWS. 
+The "kid" (key ID) Header Parameter is a hint indication which key was
+used to secure the JWS. This parameter allows originators to explicitly
+signal a change of key to recipients. The structure of the "kid" value
+is unspecified. Its value MUST be a case-sensitive string. Use of this
+Header Parameter is OPTIONAL.
+
+When used with a JWK, the "kid" value is used to match a JWK "kid"
+parameter value.
+
+### "x5u (X.509 URL) Header Parameter
+
+The "z5u" (X.509 URL) Header Parameter is a URI
+[RFC3986](https://www.rfc-editor.org/rfc/rfc3986) that refers to a
+resource for the X.509 public key certificate of certificate chain
+[RFC5280](https://www.rfc-editor.org/rfc/rfc5280) corresponding to the
+key used to digitally sign the JWS. The identified resource MUST provide
+a representation of the certificate or certificate chain that conforms
+to [RFC 5280](https://www.rfc-editor.org/rfc/rfc5280) in PEM-encoded
+form, with each certificate delimited as specified in [Section 6.1 of
+RFC 4945](https://www.rfc-editor.org/rfc/rfc4945#section-6.1)
+[[RFC4945](https://www.rfc-editor.org/rfc/rfc4945)]. The certificate
+containing the public key corresponding to the key used to digitally
+sign the JWS MUST be the first certificate. This MAY be followed by
+additional certificates, with each subsequent certificate being the one
+used to certify the previous one. The protocol used to acquire the
+resource MUST provide integrity protection: an HTTP GET request to
+retrieve the certificate MUST use TLS
+[[RFC2818](https://www.rfc-editor.org/rfc/rfc2818)]
+[[RFC5246](https://www.rfc-editor.org/rfc/rfc5246)]; and the identity of
+the server MUST be validated, as per [Section 6 of RFC
+6125](https://www.rfc-editor.org/rfc/rfc6125#section-6)
+[[RFC6125](https://www.rfc-editor.org/rfc/rfc6125)].
+Also, see [Section 8](https://www.rfc-editor.org/rfc/rfc7515#section-8)
+on TLS requirements. Use of this Header Parameter is OPTIONAL.
+
+### "x5c" (X.509 Certificate Chain) Header Parameter
+
+The "x5c" (X.509 certificate chain) Header Parameter contains the X.509 public key certificate or certificate chain [[RFC5280](https://www.rfc-editor.org/rfc/rfc5280)] corresponding to the key used to digitally sign the JWS. The certificate of certificate chain is represented as a JSON array of certificate value strings. Each string in the array is a base64-encoded ([Section 4 of \[RFC4648\]](https://www.rfc-editor.org/rfc/rfc4648#section-4) -- not base64url-encoded) DER [[ITU.X690.2008](https://www.rfc-editor.org/rfc/rfc7515#ref-ITU.X690.2008)] PKIX certificate value. The certificate containing the public key corresponding to the key used to digitally sign the JWS MUST be the first certificate. This MAY be followed by additional certificates, with each subsequent certificate being the one used to certify the previous one. The recipient MUST validate the certificate chain according to [RFC 5280](https://www.rfc-editor.org/rfc/rfc5280) and consider the certificate or certificate chain to be invalid if any validation failure occurs. Use of this Header Parameter is OPTIONAL.
+
+See Appendix B for an example "x5c" value.
+
+### "x5t (X.509 Certificate SHA-1 Thumbprint) Header Parameter
+
+The "x5t" (X.509 certificate SHA-1 thumbprint) Header Parameter is a base64url-encoded SHA-1 thumbprint (a.k.a. digest) of the DER encoding of the X.509 certificate [[RFC5280](https://www.rfc-editor.org/rfc/rfc5280)] corresponding to the key used to digitally sign the JWS. Note that certificate thumbprints are also sometimes known as certificate fingerprints. Use of this Header Parameter is OPTIONAL.
+
+### "x5t#S256" (X.509 Certificate SHA-256 Thumbprint) Header Parameter
+
+The "x5t#S256" (X.509 certificate SHA-256 thumbprint) Header Parameter is a base64url-encoded SHA-256 thumbprint  (a.k.a. digest) of the DER encoding of the X.509 certificate [[RFC5280](https://www.rfc-editor.org/rfc/rfc5280)] corresponding to the key used to digitally sign the JWS. Note that certificate thumbprints are also sometimes known as certificate fingerprints. Use of this Header Parameter is OPTIONAL.
+
+### "typ" (Type) Header Parameter
+p12 of 62
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
