@@ -21,7 +21,7 @@ can be as small as a button, or as large as an entire page.
 
 React components are JavaScript functions that return markup:
 
-```typescript
+```javascript
 function MyButton() {
   return (
     <button>I'm a button</button>
@@ -31,7 +31,7 @@ function MyButton() {
 
 Now that you've declared `MyButton`, you can nest it into another component:
 
-```typescript
+```javascript
 export default function MyApp() {
   return (
    <div>
