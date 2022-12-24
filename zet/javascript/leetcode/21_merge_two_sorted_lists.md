@@ -8,7 +8,7 @@ Return the head of the merged linked list.
 
 Example 1:
 
-![Merge Sorted Linked Lists](../../images/leetcode/21_merge_ex1.jpeg)
+![Merge Sorted Linked Lists](../../../images/leetcode/21_merge_ex1.jpeg)
 
 ```
 Input: list1 = [1,2,4], list2 = [1,3,4]
