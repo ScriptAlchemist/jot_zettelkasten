@@ -140,12 +140,79 @@ In the above example, `style={{}}` is not a special syntax, but a regular `{}` o
 
 ### Conditional Rendering
 
+In React, there is no special syntax for writing conditions. Instead,
+you'll use the same techniques as you use when writing regular
+JavaScript code. For example, you can use an `if` statement to
+conditionally include JSX:
 
+```javascript
+let content;
+if (isLoggedIn) {
+  content = <AdminPanel />;
+} else {
+  constent = <LoginForm />;
+}
 
+return (
+  <div>
+    {content}
+  </div>
+);
+```
 
+If you prefer more compact code, you can use the `conditional ?
+operator`. Unlike `if`, it works inside JSX;
 
+```javascript
+<div>
+  {isLoggedIn ? (
+    <AdminPanel />
+  ) : (
+    <LoginForm />
+  )}
+</div>
+```
 
+When you don't need the `else` branch, you can also use a shorter
+`logical && syntax`:
 
+```javascript
+<div>
+  {isLoggedIn && <AdminPanel />}
+</div>
+```
+
+All of these approaches also work for conditionally specifying attributes. If you're unfamiliar with some of this JavaScript syntax, you can start by always using `if...else`.
+
+### Rendering Lists
+
+You will rely on JavaScript features like `for` loop and the array `map()` function to render lists of components.
+
+For example, lets' say you have an array of products:
+
+```javascript
+const products = [
+  { title: 'Cabbage', id: 1 },
+  { title: 'Garlic', id: 2 },
+  { title: 'Apples', id: 3 },
+];
+```
+
+Inside your component, use the `map()` function to transform an array of products into an array of `<li>` items:
+
+```javascript
+const listItems = products.map(products =>
+  <li key={product.id}>
+    {product.title}
+  </li>
+);
+
+return (
+  <ul>{listItems}</ul>
+);
+```
+
+Notice how `<li>` has a `key` attribute. For each item in a list, you should pass a string or a number that uniquely identifies that item among its siblings. Usually, a key should be coming from your data, such as a database ID. React will rely on your keys to understand what happened if you later insert, delete, or reorder the items.
 
 
 
