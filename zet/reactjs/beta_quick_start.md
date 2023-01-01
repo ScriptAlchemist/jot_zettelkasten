@@ -214,7 +214,239 @@ return (
 
 Notice how `<li>` has a `key` attribute. For each item in a list, you should pass a string or a number that uniquely identifies that item among its siblings. Usually, a key should be coming from your data, such as a database ID. React will rely on your keys to understand what happened if you later insert, delete, or reorder the items.
 
+```javascript
+const products = [
+  { title: 'Cabbage', isFruit: false, id: 1 },
+  { title: 'Garlic', isFruit: false, id: 2 },
+  { title: 'Apple', isFruit: true, id: 3 },
+];
 
+export default function ShoppingList() {
+  const listItems = products.map(product =>
+    <li
+      key={product.id}
+      style={{
+        color: product.isFruit ? 'magenta' : 'darkgreen'
+      }}
+    >
+      {product.title}
+    </li>
+  );
 
+  return (
+    <ul>{listItems}</ul>
+  );
+}
+```
 
+### Responding To Events
+
+You can respond to events by declaring event handler functions inside your components:
+
+```javascript
+function MyButton() {
+  function handleClick() {
+    alert('You clicked me!');
+  }
+
+  return (
+    <button onClick={handleClick}>
+      Click me
+    </button>
+  );
+}
+```
+
+Notice how `onClick={handleClick}` has no parentheses at the end! No not call the event handler function: you only need to pass it down. React will call your event handler when the user clicks the button.
+
+### Updating the screen
+
+Often, you'll want your components to "remember" some information and display it. For example, maybe you want to count the number of times a button is clicked. To do this, add state to your component.
+
+First, import `useState` from React:
+
+```javascript
+import { useState } from 'react';
+```
+
+Now you can declare a state variable inside your component:
+
+```javascript
+function MyButton() {
+  const [count, setCount] = useState(0);
+```
+
+You will get two things from `useState`: the current state (count), and the function that lets you update it (setCount). You can give them any names, but the convention is to call them like `[something, setSomething]`.
+
+The first time the button is displayed, `cout` will be `0` because you passed `0` the `useState()`. When you want to change state, call `setCount()` and pass the new value to it. Clicking this buttons will increment the counter:
+
+```javascript
+function MyButton() {
+  const [count, setCount] = ueState(0);
+
+  function handleClick() {
+    setCount(count + 1);
+  }
+
+  return (
+    <button onClick={handleClick}>
+      Clicked {count} times
+    </button>
+  );
+}
+```
+
+React will call your component function again. This time, `count` will be `1`. Then it will be `2`. and so on.
+
+If you render the same component multiple times, each will get its own state. Try clicking each button separately:
+
+```javascript
+import { useState } from 'react';
+
+export default function MyApp() {
+  return (
+    <div>
+      <h1>Counters that update separately</h1>
+      <MyButton />
+      <MyButton />
+    </div>
+  );
+}
+
+function MyButton() {
+  const [count, setCount] = useState(0);
+
+  function handleClick() {
+    setCount(count + 1);
+  }
+
+  return (
+    <button onClick={handleClick}>
+      Clicked {count} times
+    </button>
+  );
+}
+```
+
+Notice how each buttons "remembers" its own `count` state and doesn't affect other buttons.
+
+### Using Hooks
+
+Functions starting with `use` are called `Hooks`. `useState` is a built-in Hook provided by React. You can find other built-in Hooks in the `React API reference`. You can also write your own Hooks by combining the existing ones.
+
+Hooks are more restrictive than regular functions. You can only call Hooks at the top level of your components (or other hooks). If you want to use `useState` in a condition or a loop, extract a new component and put it there.
+
+### Sharing data between components
+
+In the previous example, each `MyButton` had its own independent `count`, and when each button was clicked, on the `count` for the button clicked changed:
+
+Initially, each `MyButton`'s `count` state is `0`.
+
+The first `MyButton` updates it's `count` to `1`
+
+However, often you'll need components to share data and always update together.
+
+To make both `MyButton` components display the same `count` and update together, you need to move the state from the individual buttons "upwards" to the closest component containing all of them.
+
+In this example, it is `MyApp`:
+
+Initially, `MyApp`'s `count` state is `0` and is passed down to both children.
+
+On click, `MyApp` updates its `count` state to `1` and passes it down to both children.
+
+Now when you click either button, the `count` in `MyApp` will change, which will change both of the counts in `MyButton`. Here's how you can express this in code.
+
+First, move the state up from `MyButton` into `MyApp`:
+
+```javascript
+export default function MyApp() {
+  const [count, setCount] = useState(0);
+
+  function handleClick() {
+    setCount(count + 1);
+  }
+
+  return (
+    <div>
+      <h1>Counters that update separately</h1>
+      <MyButton />
+      <MyButton />
+    </div>
+  );
+}
+
+function MyButton() {
+  // ... we're moving code from here ...
+}
+```
+
+Then, pass the state down from `MyApp` to each `MyButton`, together with the shared click handler. You can pass information to `MyButton` using the JSX curly braces, just like you previously did with built-in tags like `<img>`:
+
+```javascript
+export default function MyApp() {
+  const [count, setCount] = useState(0);
+
+  function handleClick() {
+    setCount(count + 1);
+  }
+
+  return (
+    <div>
+      <h1>Counters that update together</h1>
+      <MyButton count={count} onClick={handleClick} />
+      <MyButton count={count} onClick={handleClick} />
+    </div>
+  );
+}
+```
+
+The information you pass down like this is called props. Now the `MyApp` component contains the `count` state and the `handleClick` event handler, and passes both of them down as props to each of the buttons.
+
+Finally, change `MyButton` to read the props you have passed for its parent component:
+
+```javascript
+function MyButton({ count, onClick }) {
+  return (
+    <button onClick={onClick}>
+      Clicked {count} times
+    </button>
+  );
+}
+```
+
+When you click the button, the `onClick` handler fires. Each button's `onClick` prop was set to the `handleClick` function inside `MyApp`, so the code inside of it runs. That code calls `setCount(count + 1)`, incrementing the `count` state variable. The new `count` value is passed as a prop to each button, so they all show the new value.
+
+This is called "lifting state up". By moving state up, we've shared it between components.
+
+```javascript
+import { useState } from 'react';
+
+export default function MyApp() {
+  const [count, setCount] = useState(0);
+
+  function handleClick() {
+    setCount(count + 1);
+  }
+
+  return (
+    <div>
+      <h1>Counters that update together</h1>
+      <MyButton count={count} onClick={handleClick} />
+      <MyButton count={count} onClick={handleClick} />
+    </div>
+  );
+}
+
+function MyButton({ count, onClick }) {
+  return (
+    <button onClick={onClick}>
+      Clicked {count} times
+    </button>
+  );
+}
+```
+
+By now, you know the basics of how to write React code!
+
+Check out the Tutorial to put them into practice and build your first mini-app with React.
 
