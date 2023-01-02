@@ -1336,9 +1336,80 @@ Notice how `[Array(9).fill(null)]` is an array with a single item, which itself 
 To render the squares for the current move, you'll want to read the last squares array from the `history`. You don't need `useState` for this--you already have enough information to calculate it during rendering:
 
 ```javascript
+export default function Game() {
+  const [xIsNext, setXisNext] = useState(true);
+  const [history, setHistory] = useState([Array(9).fill(null)]);
+  const currentSquares = history[history.length - 1];
+  // ...
+```
+
+Next, create a `handlePay` function inside the `Game` component that will be called by the `Board` component to update the game. Pass `xIsNext`, `currentSquares`, and `handlePay` as props to the `Board` component:
+
+```javascript
+export default function Game() {
+  const [xIsNext, setXIsNext] = useState(true)
+  const [history, setHistory] = useState([Array(9).fill(null)]);
+  const currentSquares = history[history.length - 1];
+
+  function handlePlay(nextSquares) {
+    // TODO
+  }
+
+  return (
+    <div className="game">
+      <div className="game-board">
+        <Board xIsNext={xIsNext} squares={currentSquares}
+        onPlay={handlePlay} />
+        // ...
+
+  )
+}
+```
+
+Let's make the `Board` component fully controlled by the props it
+receives. Change the `Board` component to take three props: `xIsNext`,
+`squares`, and a new `onPlay` function that `Board` can call with the
+updated squares array whenever a player makes a move. Next, remove the
+first two lines of the `Board` function that call `useState`:
+
+```javascript
+function Board({ xIsNext, squares, onPlay }) {
+  function handleClick(i) {
+    // ...
+  }
+  // ...
+}
+```
+
+Now you'll replace the `setSquares` and `setXIsNext` calls in
+`handleClick` in the `Board` component with a single call to your new
+`onPlay` function so the `Game` component can update the `Board` when
+the user clicks a square:
+
+```javascript
+function Board({ xIsNext, squares, onPlay }) {
+  function handleClick(i) {
+    if (calculateWinner(squares) || squares[i]) {
+      return;
+    }
+    const nextSquares.slice();
+    if (xIsNext) {
+      nextSquares[i] = "X";
+    } else {
+      nextSquares[i] = "O";
+    }
+    onPlay(nextSquares);
+  }
+  // ...
+}
+```
+
+The `Board` component is fully controlled by the props passed to it by the `Game` component. You need to implement the `handlePlay` function in the `Game` component to get the game working again.
+
+What should `handlePlay` do when called? Remember that Board sued to call `setSquares` with an updated array; now it passes the updated `squares` array to `onPlay`.
 
 
-
+The `handlePlay` function needs to update `Games`'s state to trigger a re-render, but you don't have a `setSquares` function that you can call any more--you're now using the `history` state variable to store this information. You'll want to update `history` by appending the updated `squares` array as a new history entry. You also want to toggle `xIsNext`, just as Board used to do:
 
 
 
