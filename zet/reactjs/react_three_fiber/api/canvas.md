@@ -22,10 +22,13 @@ const App = () => (
 
 ### Render Props
 
-* children: {
+```
+children: {
     description: "Three.js JSX elements or regular components",
     default: ""
   }
+```
+
 * gl: {
     description: "Props that go into the default renderer, or your own
     renderer. Also accepts a synchronous callback like `gl={canvas =>
