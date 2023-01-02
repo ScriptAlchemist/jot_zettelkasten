@@ -21,3 +21,13 @@ task.
 
 With those tool you could create a fully functioning being on the
 internet. 
+
+It sounds a bit deceitful. I'm not 100% sure that I'm comfortable with the idea of lying/cat fishing. But here is the thing. It's just a performance. So the goal isn't to lie or catfish anyone. The goal is to create something/someone that people want to follow and interact with. 
+
+## What features does the AI-fluencer have?
+
+* Comment response
+* Buddy chat
+* Sponsorships
+
+
