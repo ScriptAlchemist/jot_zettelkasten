@@ -180,24 +180,33 @@ function Component() {
 The `extend` function extends React Three Fiber's catalogue of JSX elements. Components added this way can then be referenced in the scene-graph using camel casing similar to other primitives.
 
 ```javascript
+import { extend } from '@react-three/fiber'
+import { OrbitControls, TransformControls } from 'three-stdlib'
+extend({ OrbitControls, TransformControls })
 
+// ...
+return (
+  <>
+    <orbitControls />
+    <transformControls />
 ```
 
 If you're using TypeScript, you'll also need to [extend the JSX namespace](https://docs.pmnd.rs/react-three-fiber/tutorials/typescript#extending-jsx-intrinsic-elements)
 
 ## Disposal
 
+Freeing resources is a manual chore in `three.js`, but React is aware of object-lifecycles, hence React Three Fiver will attempt to free resources for you by calling `object.dispose()`. If present, on all unmounted objects.
 
+If you manage assets by yourself, globally or in a cache, this may not be what you want. You can switch it off by placing `dispose={null}` onto meshes, materials, etc, or even on parent containers like groups, it is now valid for the entire tree.
 
+```javascript
+const globalGeometry = new THREE.BoxGeometry()
+const globalMaterial = new THREE.MeshBasicMaterial()
 
-
-
-
-
-
-
-
-
-
+function Mesh() {
+  return (
+    <group dispose={null}>
+      <mesh geometry={globalGeometry} material={globalMaterial} />
+```
 
 
