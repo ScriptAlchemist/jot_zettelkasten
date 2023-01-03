@@ -1899,6 +1899,22 @@ Next, update the `jumpTo` function inside `Game` to update that `currentMove`. Y
 
 ```javascript
 export default function Game() {
+  // ...
+  function jumpTo(nextMove) {
+    setCurrentMove(nextMove);
+    setXIsNext(nextMove % 2 === 0);
+  }
+  // ...
+}
+```
+
+You will now make two changes to the `Game`'s `handlePlay` function which is called when you click on a square.
+
+* If you "go back in time and then make an ewm ove from theat point, you only want to kep the history up to that point. Instead of adding `nextSquares` after all items (`...` spread syntax) in `history`, you'll add it after all items in `history.slice(0, currentMove + 1)` so that you're only keeping that portion of the old history.
+* Each time a move is made, you need to update `currentMov` to point to the latest history entry.
+
+```javascript
+function handlePlay(nextSquares){
 ```
 
 
