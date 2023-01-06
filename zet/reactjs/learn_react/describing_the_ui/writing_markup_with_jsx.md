@@ -24,5 +24,244 @@ Each React component is a JavaScript function that may contain some markup that 
 > but you can use them independently of each other. JSX is a syntax
 > extension, while React is a JavaScript library. 
 
+## Converting HTML to JSX
+
+Suppose that you have some (perfectly valid) HTML:
+
+```html
+<h1>
+<img
+  src="https://i.imgur.com/yXOvdOSs.jpg"
+  alt="Hedy Lamarr"
+  class="photo"
+>
+<ul>
+  <li>Invent new traffic lights</li>
+  <li>Rehearse a movie scene</li>
+  <li>Improve the spedtrum technology</li>
+</ul>
+```
+
+And you want to put it into your component:
+
+```javascript
+export default function TodoList() {
+  return (
+    // ???
+  )
+}
+```
+
+If you copy paste it as is, it will not work:
+
+```javascript
+export default function TodoList() {
+  return (
+    // This doesn't quite work!
+    <h1>Hedy Lamarr's Todos</h1>
+    <img
+      src="https://i.imgur.com/yXOvdOSs.jpg"
+      alt="Hedy Lamarr"
+      class="photo"
+    >
+    <ul>
+      <li>Invent new traffic lights
+      <li>Rehearse a movie scene
+      <li>Improve the spectrum technology
+    </ul>
+  );
+}
+```
+
+Error:
+
+```
+Error
+/App.js: Adjacent JSX elements must be wrapped in an enclosing tag. Did you want a JSX fragment <>...</>? (5:4)
+
+  3 |     // This doesn't quite work!
+  4 |     <h1>Hedy Lamarr's Todos</h1>
+> 5 |     <img
+    |     ^
+  6 |       src="https://i.imgur.com/yXOvdOSs.jpg"
+  7 |       alt="Hedy Lamarr"
+  8 |       class="photo"
+```
+
+This is because JSX is stricter and has a few more rules than HTML! If you read the error messages above, they'll guide you to fix the markup, or you can follow the guide below.
+
+> #### Note
+>
+> Most of the times, React's on-screen error messages will help you find
+> where the problem is. Give them a read if you get stuck!
+
+## The Rules of JSX
+
+### 1. Return a single root element
+
+To return multiple elements from a component, wrap them with a single parent tag.
+
+For example, you can use a `<div>`:
+
+```javascript
+<div>
+  <h1>Hedy Lamarr's Todos</h1>
+  <img
+    src="https://i.imgur.com/yXOvdOSs.jpg"
+    alt="Hedy Lamarr"
+    class="photo"
+  >
+  <ul>
+   //...
+  </ul>
+</div>
+```
+
+If you don't want to add an extra `<div>` to your markup, you can write `<>` and `</>` instead:
 
 
+```javascript
+<>
+  <h1>Hedy Lamarr's Todos</h1>
+  <img 
+    src="https://i.imgur.com/yXOvdOSs.jpg" 
+    alt="Hedy Lamarr" 
+    class="photo"
+  >
+  <ul>
+    ...
+  </ul>
+</>
+```
+
+This empty tag is called a `Fragment`. Fragments let you group things without leaving any trace in the browser HTML tree.
+
+> ##### Dive Deep
+>
+> #### Why do multiple JSX tags need to be wrapped?
+>
+> JSX looks like HTML, but under the hood it is transformed into plain
+> JavaScript objects. You can't return two objects from a function
+> without wrapping them into an array. This explains why you also can't
+> return two JSX tags without wrapping them into another tag or
+> Fragment.
+
+### 2. Close all the tags
+
+JSX requires tags to be explicitly closed: self-closing tags like `<img>` must become `<img />`, and wrapping tags like `<li>oranges` must be written as `<li>oranges</li>`.
+
+This is how Hedy Lammarr's image and list items look closed:
+
+```javascript
+<>
+  <img
+    src="https://i.imgur.com/yXOvdOSs.jpg"
+    alt="Hedy Lamarr"
+    class="photo"
+  />
+  <ul>
+    <li>Invent new traffic lights</li>
+    <li>Rehearse a movie scene</li>
+    <li>Improve the spectrum technology</li>
+  </ul>
+</>
+```
+
+### 3. camelCase most of the things!
+
+JSX turns into JavaScript and attributes written in JSX becomes keys of JavaScript objects. In your own components, you will often want to read those attributes into variables. But JavaScript has limitations on variable names. For example, their names can't contain dashes or be reserved words like `class`.
+
+This is why, in React, many HTML and SVG attributes are written in camelCase. For example, instead of `stroke-width` you use `strokeWidth`. Since `class` is a reserved word, in React you write `className` instead, named after the `corresponding DOM property`:
+
+```javascript
+<img
+  src="https://i.imgur.com/yXOvdOSs.jpg"
+  alt="Hedy Lamarr"
+  className="photo"
+/>
+```
+
+You can find all these attributes in the React DOM Elements. If you get one wrong, don't worry--React will print a message with a possible correction to the `browser console`.
+
+> #### Pitfall
+>
+> For historical reasons, `aria-*` and `data-*` attributes are written
+> as in HTML with dashes.
+
+### Pro-tip: Use a JSX Converter
+
+Converting all these attributes in existing markup can be tedious! We recommend using a `converter` to translate your existing HTML and SVG to JSX. Converters are very useful in practice, but it's still worth understanding what is going on so that you can comfortably write JSX on your own.
+
+Here is your final result:
+
+```javascript
+export default function TodoList() {
+  return (
+    <>
+      <h1>Hedy Lamarr's Todos</h1>
+      <img 
+        src="https://i.imgur.com/yXOvdOSs.jpg" 
+        alt="Hedy Lamarr" 
+        className="photo" 
+      />
+      <ul>
+        <li>Invent new traffic lights</li>
+        <li>Rehearse a movie scene</li>
+        <li>Improve the spectrum technology</li>
+      </ul>
+    </>
+  );
+}
+```
+
+## Recap
+
+Now you know why JSX exists an how to use it in components:
+
+* React components group rendering logic together with markup because they are related.
+* JSX is similar to HTML, with a few difference. You can use a `converter` if you need to.
+* Error messages will often point you in the right direction to fixing your markup.
+
+## Challenges
+
+### Challenge 1 of 1: Convery sme HTML to JSX
+
+This HTML was pasted into a component, but it's not valid JSX. Fix is:
+
+```javascript
+export default function Bio() {
+  return (
+    <div class="intro">
+      <h1>Welcome to my website!</h1>
+    </div>
+    <p class="summary">
+      You can find my thoughts here.
+      <br><br>
+      <b>And <i>pictures</b></i> of scientists!
+    </p>
+  );
+}
+```
+
+#### Solution
+
+```javascript
+export default function Bio() {
+  return (
+    <>
+      <div className="intro">
+        <h1>Welcome to my website!</h1>
+      </div>
+      <p className="summary">
+        You can find my thoughts here.
+        <br />
+        <br />
+        <b>
+          And <i>pictures</i>
+        </b>{" "}
+        of scientists!
+      </p>
+    </>
+  );
+}
+```
