@@ -62,9 +62,9 @@ Following is a small intro of each of these patterns with simple problems:
 
 ## 1. Sliding Window
 
-Usage: This algorithmic technique is used when we need to handle the input data in a specific window size.
+`Usage`: This algorithmic technique is used when we need to handle the input data in a specific window size.
 
-DS Involved: Array, String, HashTable
+`DS Involved`: Array, String, HashTable
 
 ```
 {[1][3][2][6][-1]}[4][1][8][2]
@@ -75,11 +75,64 @@ Then we slide the window over 1 slot
 
 ```
 
-Sample Problems:
+`Sample Problems`:
 
 * Longest Substring with "K" distinct Characters
 * Fruits into Baskets
 
 ## 2. Islands (Matrix traversal)
 
+`Usage`: This pattern describes all the efficient ways of traversing a matrix (or 2D array).
 
+`DS Involved`: Matrix, Queue
+
+```
+[1][1][1][0][0]
+[0][1][0][0][1]
+[0][0][1][1][0]
+[0][0][1][0][0]
+[0][0][1][0][0]
+```
+
+`Sample Problems`:
+
+* Number of Islands
+* Flood Fill
+* Cycle in a Matrix
+
+## 3. Two Pointers
+
+`Usage`: This technique uses two pointers to iterate input data. Generally, both pointers move in the opposite direction at a constant interval.
+
+`DS Involved`: Array, String, LinkedList
+
+```
+Pointer 1       Pointer 2
+      |           |
+      V           V
+     [1][2][3][4][5]
+```
+
+`Sample Problems`:
+
+* Squaring a Sorted Array
+* Dutch National Flag Problem
+* Minimum Window Sort
+
+## 4. Fast & Slow Pointers
+
+`Usage`: Also known as Hare & Tortoise algorithm. This technique uses two pointers that traverse the input data at different speeds.
+
+`DS Involed`: Array, String, LinkedList
+
+```
+
+```
+
+`Sample Problems`:
+
+* Middle of the LinkedList
+* Happy Number
+* Cycle in a Circular Array
+
+## 5. 
