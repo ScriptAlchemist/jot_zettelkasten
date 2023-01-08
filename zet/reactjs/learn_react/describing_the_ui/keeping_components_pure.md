@@ -132,4 +132,277 @@ In general, you should not expect your components to be rendered in any particul
 > `state`, and `context`. You should always treat these inputs as
 > read-only.
 >
-> 
+> When you want to change something in response to user input, you
+> should `set state` instead of writing to a variable. You should never
+> change preexisting variables or objects while your component is
+> rendering.
+>
+> React offers a "Strict Mode" in which it calls each component's
+> function twice during development. By calling the component functions
+> twice, Strict Mode helps find components that break these rules.
+>
+> Notice how the original example displayed "Guest #2", "Guest #4", and
+> "Guest #6" instead of "Guest #1", "Guest #2", and "Guest #3". The
+> original function was impure, so calling it twice broke it. But the
+> fixed pure version works even if the function is called twice every
+> time. Pure functions only calculate, so calling them twice won't
+> change anything--just like calling `double(2)` twice doesn't change
+> what's returned, and solving `y = 2x` twice doesn't change what `y`
+> is. Same inputs, same outputs. Always.
+>
+> Strict Mode has no effect in production, so it won't slow down the app
+> for your users. To opt into Strict Mode, you can wrap your root
+> component into `<React.StrictMode>`. Some frameworks do this by
+> default.
+
+## Local mutation: Your component's little secret
+
+In the above example, the problem was the component changed a preexisting variable while rendering. This is often called a "mutation" to make it sound a bit scarier. Pure functions don't mutate variables outside of function's scope or objects that were created before the call--that makes them impure!
+
+However, it's completely fine to change variables and objects that you've just created while rendering. In this example, you create an `[]` array, assign it to a `cups` variable, and then `push` a dozen cups into it:
+
+```javascript
+function Cup({ guest }) {
+  return <h2>Tea cup for guest #{guest}</h2>;
+}
+
+export default function TeaGathering() {
+  let cups = [];
+  for (let i = 1; i <= 12; i++) {
+    cups.push(<Cup key={i} guest={i} />);
+  }
+  return cups;
+}
+```
+
+If the `cups` variable of the `[]` array were created outside the `TeaGathering` function, this would be a huge problem! You would be changing a preexisting object by pushing items into that array.
+
+However, it's fine because you've created them during the same render, inside `TeaGathering`. No code outside of `TeaGathering` will ever know that this happened. This is called "local mutation"--it's like your component's little secret.
+
+## Where you can cause side effects
+
+While functional programming relies heavily on purity, at some point, somewhere, something has to change. That's kind of the point of programming! These changes--updating the screen, starting an animation, changing the data--are called side effects. They're things that happen "on the side", not during rendering.
+
+In React, side effects usually belong inside event handlers. Event handlers are functions that Reacts runs when you perform some action--form example, when you click a button. Even though event handlers are defined inside you component, they don't run during rendering! So event handlers don't need to be pure.
+
+If you've exhausted all other options and can't find the right event handler for your side effect, you can still attach it to you returned JSX with a `useEffect` call in your component. This tells React to execute it later, after rendering, when side effects are allowed. However, this approach should be your last resort.
+
+When possible, try to express your logic with rendering alone. You'll be surprised how far this can take you!
+
+> ##### deep dive
+>
+> #### Why does React care about purity?
+>
+> Writing pure functions takes some habit and discipline. But it also
+> unlocks marvelous opportunities:
+>
+> * Your components could run in a different environment--for example, on the server! Since they return the same result for the same inputs, one component can serve many users request.
+> * You can improve performance by skipping rendering components whose inputs have not changed. This is safe because pure functions always return the same results, so they are safe to cache.
+> * If some data changes in the middle of rendering a deep component tree, React can restart rendering without wasting time to finish the outdated render. Purity makes it safe to stop calculating at any time.
+>
+> Every new React feature we're building takes advantage of purity. From
+> data fetching to animations to performance, keeping components pure
+> unlocks the power of the React paradigm.
+
+## Recap
+
+* A component must be pure, meaning:
+  * It minds its own business. It should not change any objects of variables that existed before rendering.
+  * Same inputs, same output. Given the same inputs, a component should always return the same JSX. 
+* Rendering can happen at any time, so components should not depend on each others' rendering sequence.
+* You should not mutate any of the inputs that your components use for rendering. That includes props, state, and context. To update the screen, `"set" state` instead of mutating preexisting objects.
+* Strive to express your component's logic in the JSX you return. When you need to "change things", you'll usually want to do it in an event handler. As a last resort, you can `useEffect`.
+* Writing pure functions takes a bit of practice, but it unlocks the power of React's paradigm.
+
+# Challenges
+
+## Challenge 1 of 3: Fix a broken clock
+
+This component tries to set the `<h1>`'s CSS class to `"night"` during the time from midnight to six hours in the morning, and `"day"` at all other times. However, it doesn't work. Can you fix this component?
+
+You can verify whether you solution works by temporarily changing the computer's timezone. When the current time is between midnight and six in the morning, the clock should have inverted colors!
+
+```javascript
+export default function Clock({ time }) {
+  let hours = time.getHours();
+  if (hours >= 0 && hours <= 6) {
+    document.getElementById('time').className = 'night';
+  } else {
+    document.getElementById('time').className = 'day';
+  }
+  return (
+    <h1 id="time">
+      {time.toLocaleTimeString()}
+    </h1>
+  );
+}
+```
+
+## Challenge 2 of 3: Fix a broken profile
+
+Two `Profile` components are rendered side by side with different data. Press "Collapse" on the first profile, and then "Expand" it. You'll notice that both profiles now show the same person. This is a bug.
+
+Find the cause of the bug and fix it.
+
+`App.js`:
+
+```javascript
+import Profile from './Profile.js';
+
+export default function App() {
+  return (
+    <>
+      <Profile person={{
+        imageId: 'lrWQx8l',
+        name: 'Subrahmanyan Chandrasekhar',
+      }} />
+      <Profile person={{
+        imageId: 'MK3eW3A',
+        name: 'Creola Katherine Johnson',
+      }} />
+    </>
+  )
+}
+```
+
+`Profile.js`:
+
+```javascript
+import Panel from './Panel.js';
+import { getImageUrl } from './utils.js';
+
+let currentPerson;
+
+export default function Profile({ person }) {
+  currentPerson = person;
+  return (
+    <Panel>
+      <Header />
+      <Avatar />
+    </Panel>
+  )
+}
+
+function Header() {
+  return <h1>{currentPerson.name}</h1>;
+}
+
+function Avatar() {
+  return (
+    <img
+      className="avatar"
+      src={getImageUrl(currentPerson)}
+      alt={currentPerson.name}
+      width={50}
+      height={50}
+    />
+  );
+}
+```
+
+## Challenge 3 of 3: Fix a broken story tray
+
+The CEO of your company is asking you to add "stories" to your online clock app, and you can't say no. You've written a `StoryTray` component that accepts a list of `stories`, followed by a "Create Story" placeholder.
+
+You implemented the "Create Story" placeholder by pushing one more fake story at the end of the `stories` array that you receive as a prop. But for some reason, "Create Story" appears more than once.
+Fix the issue.
+
+```javascript
+export default function StoryTray({ stories }) {
+  stories.push({
+    id: 'create',
+    label: 'Create Story'
+  });
+
+  return (
+    <ul>
+      {stories.map(story => (
+        <li key={story.id}>
+          {story.label}
+        </li>
+      ))}
+    </ul>
+  );
+}
+```
+
+# Solutions
+
+## Challenge 1 of 3:
+
+```javascript
+export default function Clock({ time }) {
+  let hours = time.getHours();
+  let theClass;
+  if (hours >= 0 && hours <= 6) {
+    theClass = 'night';
+  } else {
+    theClass = 'day';
+  }
+  time.setHours(1);
+  return (
+    <h1 id="time" className={theClass}>
+      {time.toLocaleTimeString()}
+    </h1>
+  );
+}
+```
+
+## Challenge 2 of 3:
+
+The problem is that the Profile component writes to a preexisting variable called currentPerson, and the Header and Avatar components read from it. This makes all three of them impure and difficult to predict.
+
+To fix the bug, remove the currentPerson variable. Instead, pass all information from Profile to Header and Avatar via props. You’ll need to add a person prop to both components and pass it all the way down.
+
+```javascript
+import Panel from './Panel.js';
+import { getImageUrl } from './utils.js';
+
+export default function Profile({ person }) {
+  return (
+    <Panel>
+      <Header person={person} />
+      <Avatar person={person}/>
+    </Panel>
+  )
+}
+
+function Header({ person }) {
+  return <h1>{person.name}</h1>;
+}
+
+function Avatar({ person }) {
+  return (
+    <img
+      className="avatar"
+      src={getImageUrl(person)}
+      alt={person.name}
+      width={50}
+      height={50}
+    />
+  );
+}
+```
+
+## Challenge 3 of 3:
+
+Notice how whenever the clock updates, “Create Story” is added twice. This serves as a hint that we have a mutation during rendering—Strict Mode calls components twice to make these issues more noticeable.
+
+StoryTray function is not pure. By calling push on the received stories array (a prop!), it is mutating an object that was created before StoryTray started rendering. This makes it buggy and very difficult to predict.
+
+The simplest fix is to not touch the array at all, and render “Create Story” separately:
+
+```javascript
+export default function StoryTray({ stories }) {
+  return (
+    <ul>
+      {stories.map(story => (
+        <li key={story.id}>
+          {story.label}
+        </li>
+      ))}
+      <li>Create Story</li>
+    </ul>
+  );
+}
+```
