@@ -754,5 +754,66 @@ export default function RecipeList() {
 ## Challenge 4 of 4:
 
 ```javascript
+const poem = {
+  lines: [
+    'I write, erase, rewrite',
+    'Erase again, and then',
+    'A poppy blooms.'
+  ]
+};
+
+export default function Poem() {
+  return (
+    <article>
+      {poem.lines.map((line, index) => {
+        return (
+          <>
+            {(index > 0) && <hr />}
+            <p key={index}>
+              {line}
+            </p>
+          </>
+        );
+      })}
+    </article>
+  );
+}
+```
+
+`backup answer`:
+
+```javascript
+const poem = {
+  lines: [
+    'I write, erase, rewrite',
+    'Erase again, and then',
+    'A poppy blooms.'
+  ]
+};
+
+export default function Poem() {
+  let output = [];
+
+  // Fill the output array
+  poem.lines.forEach((line, i) => {
+    output.push(
+      <hr key={i + '-separator'} />
+    );
+    output.push(
+      <p key={i + '-text'}>
+        {line}
+      </p>
+    );
+  });
+  // Remove the first <hr />
+  output.shift();
+
+  return (
+    <article>
+      {output}
+    </article>
+  );
+}
+```
 
 
