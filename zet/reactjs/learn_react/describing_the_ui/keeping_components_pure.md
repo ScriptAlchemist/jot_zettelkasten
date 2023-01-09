@@ -406,3 +406,33 @@ export default function StoryTray({ stories }) {
   );
 }
 ```
+
+Alternatively, you could create a new array (by copying the existing one) before you push an item into it:
+
+```javascript
+export default function StoryTray({ stories }) {
+  // Copy the array!
+  let storiesToDisplay = stories.slice();
+
+  // Does not affect the original array:
+  storiesToDisplay.push({
+    id: 'create',
+    label: 'Create Story'
+  });
+
+  return (
+    <ul>
+      {storiesToDisplay.map(story => (
+        <li key={story.id}>
+          {story.label}
+        </li>
+      ))}
+    </ul>
+  );
+}
+```
+
+This keeps your mutation local and your rendering function pure. However, you still need to be careful: for example, if you tried to change any of the array’s existing items, you’d have to clone those items too.
+
+It is useful to remember which operations on arrays mutate them, and which don’t. For example, push, pop, reverse, and sort will mutate the original array, but slice, filter, and map will create a new one.
+
