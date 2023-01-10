@@ -192,5 +192,347 @@ export const sculptureList = [{
 }];
 ```
 
+## Render and commit
+
+Before your components are displayed on the screen, they must be
+rendered by React. Understanding the steps in this process will help you
+think about how your code executes and explain its behavior.
+
+Imagine that your components are cooks in the kitchen, assembling tasty
+dishes from ingredients. In this scenario, React is the waiter who puts in requests from customers and brings them their orders. This process of requesting and serving UI has three steps:
+
+1. Triggering a render (delivering the diner's order to the kitchen)
+2. Rendering the component (preparing the order in the kitchen)
+3. Committing to the DOM (placing the order on the table)
+
+## State as a snapshot
+
+Unlike regular JavaScript variables, React state behaves more like a snapshot. Setting it does not change the state variable you already have, but instead triggers a re-render. This can be surprising at first!
+
+```javascript
+console.log(count); // 0
+setCount(count + 1);
+// Request a re-render with 1
+console.log(count); // Still 0!
+```
+
+React works this way to help you avoid subtle bugs. Here is a little chat app. Try to guess what happens if you press "Send" first and then change the recipient to Bob. Whose name will appear in the `alert` five seconds later?
+
+```javascript
+import { useState } from 'react';
+
+export default function Form() {
+  const [to, setTo] = useState('Alice');
+  const [message, setMessage] = useState('Hello');
+  function handleSubmit(e) {
+    e.preventDefault();
+    setTimeout(() => {
+      alert(`You said ${message} to ${to}`);
+    }, 5000);
+  }
+  
+  return (
+    <form onSubmit={handleSubmit}>
+      <label>
+        To:{' '}
+        <select
+          value={to}
+          onChange={e => setTo(e.target.value)}>
+          <option value="Alice">Alice</option>
+          <option value="Bob">Bob</option>
+        </select>
+      </label>
+      <textarea
+        placeholder="Message"
+        value={message}
+        onChange={e => setMessage(e.target.value)}
+      />
+      <button type="submit">Send</button>
+    </form>
+  );
+}
+```
+
+## Queuing a series of state updates
+
+This component is buggy: clicking "+3" increments the score only once.
+
+```javascript
+import { useState } from 'react';
+
+export default function Counter() {
+  const [score, setScore] = useState(0);
+
+  function increment() {
+    setScore(score + 1);
+  }
+
+  return (
+    <>
+      <button onClick={() => increment()}>+1</button>
+      <button onClick={() => {
+        increment();
+        increment();
+        increment();
+      }}>+3</button>
+      <h1>Score: {score}<h1>
+    </>
+  );
+}
+```
+
+`State as a Snapshot` explains why this is happening. Setting state requests a new re-render, but does not change it in the already running code. So `score` continues to be `0` right after you call `setScore(score + 1)`.
+
+```javascript
+console.log(scroe); // 0
+setScore(score +1); // setScroe(0 +1);
+console.log(score); // 0
+setScore(score +1); // setScroe(0 +1);
+console.log(score); // 0
+setScore(score +1); // setScroe(0 +1);
+console.log(score); // 0
+```
+
+You can fix this by passing an updater function when setting state. Notice how replacing `setScore(score + 1)` with `setScore(s => s + 1)` fixes the "+3" button. This is handy if you need to queue multiple state updates.
+
+```javascript
+import { useState } from 'react';
+
+export default function Counter() {
+  const [score, setScore] = useState(0);
+  
+  function increment() {
+    setScore(s => s + 1);
+  }
+
+  return (
+    <>
+      <button onClick={() => increment()}>+1</button>
+      <button onClick={() => {
+        increment();
+        increment();
+        increment();
+      }}>+3</button>
+      <h1>Score: {score}</h1>
+    </>
+  );
+}
+```
+
+## Updating objects in state
+
+State can hold any kind of JavaScript value, including objects. But you shouldn't change objects and arrays that you hold in the React state directly. Instead, when you want to update an object and array, you need to create a new one (or make a copy of an existing one), and then update the state to use that copy.
+
+Usually, you will use the `...` spread syntax to copy objects and arrays that you want to change. For example, updating a nested object could look like this:
+
+```javascript
+import { useState } from 'react';
+
+export default function Form() {
+  const [person, setPerson] = useState({
+    name: 'Niki de Saint Phalle',
+    artwork: {
+      title: 'Blue Nana',
+      city: 'Hamburg',
+      image: 'https://i.imgur.com/Sd1AgUOm.jpg',
+    }
+  });
+
+  function handleNameChange(e) {
+    setPerson({
+      ...person,
+      name: e.target.value
+    });
+  }
+
+  function handleTitleChange(e) {
+    setPerson({
+      ...person,
+      artwork: {
+        ...person.artwork,
+        title: e.target.value
+      }
+    })
+  }
+
+  function handleCityChange(e) {
+    setPerson({
+      ...person,
+      artwork: {
+        ...person.artwork,
+        city: e.target.value
+      }
+    });
+  }
+
+  function handleImageChange(e) {
+    setPerson({
+      ...person,
+      artwork: {
+        ...person.artwork,
+        image: e.target.value
+      }
+    });
+  }
+
+  return (
+   <>
+     <label>
+       Name:
+       <input
+         value={person.name}
+         onChange={handleNameChange}
+        />
+      </label>
+      <label>
+        Title:
+        <input
+          value={person.artwork.title}
+          onChange={handleTitleChange}
+        />
+      </label>
+      <label>
+        City:
+        <imput
+          value={person.artwork.city}
+          onChange={handleCityChange}
+        />
+      </label>
+      <label>
+        Image:
+        <imput
+          value={person.artwork.image}
+          onChange={handleImageChange}
+        />
+      </label>
+      <p>
+        <i>{person.artwork.title}</i>
+        {' by '}
+        {person.name}
+        <br />
+        (located in {person.artwork.city})
+      </p>
+      <img
+        src={person.artwork.image}
+        alt={person.artwork.title}
+      />
+    </>
+  );
+}
+```
+
+If copying objects in code gets tedious, you can use a library like `Immer` to reduce repetitive code:
+
+`package.json`:
+
+```json
+{
+  "dependencies": {
+    "immer": "1.7.3",
+    "react": "latest",
+    "react-dom": "latest",
+    "react-scripts": "latest",
+    "use-immer": "0.5.1"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test --env=jsdom",
+    "eject": "react-scripts eject"
+  },
+  "devDependencies": {}
+}
+```
+
+`App.js`:
+
+```javascript
+import { useImmer } from 'use-immer';
+
+export fefault function Form() {
+  const [person, updatePerson] = useImmer({
+    name: 'Niki de Saint Phalle',
+    artwork: {
+      title: 'Bue Nana',
+      city: 'Hamburg',
+      image: 'https://i.imgur.com/Sd1AgUOm.jpg',
+    }
+  });
+
+  function handleNameChange(e) {
+    updatePerson(draft => {
+     draft.name = e.target.value;
+    });
+  }
+
+  function handleTitlechange(e) {
+    updatePerson(draft => {
+      draft.artwork.title = e.target.value;
+    });
+  }
+
+  function handleCityChange(e) {
+    updatePerson(draft => {
+      draft.artwork.city = e.target.value;
+    });
+  }
+
+  function handleImageChange(e) {
+    updatePerson(draft => {
+      draft.artwork.image = e.target.value;
+    });
+  }
+
+  return (
+    <>
+      <label>
+        Name:
+        <input
+          value={person.name}
+          onChange={handleNameChange}
+        />
+      </label>
+      <label>
+        Title:
+        <input
+          value={person.artwork.title}
+          onChange={handleTitleChange}
+        />
+      </label>
+      <label>
+        City:
+        <imput
+          value={person.artwork.city}
+          onChange={handleCityChange}
+        />
+      </label>
+      <label>
+        Image:
+        <input
+          value={person.artwork.image}
+          onChange={handleImageChange}
+        />
+      </label>
+      <p>
+        <i>{person.artwork.title}</i>
+        {' by '}
+        {person.name}
+        <be />
+        (located in {person.artwork.city})
+      </p>
+      <img
+        src={person.artwork.image}
+        alt={person.artwork.title}
+      />
+    </>
+  );
+}
+```
+
+## Updating arrays in state
+
+Arrays are another type of mutable JavaScript objects you can store in state and should treat as read-only. Just like with object, when you want to update an array stored in state, you need to create a new one (or make a copy of an existing one), and then set state to use the new array:
+
+```javascript
 
 
