@@ -94,4 +94,7 @@ All of these styles are equivalent. Inline event handlers are convenient for sho
 > When you write code inline, the same pitfall presents itself in
 > a different way:
 >
-> 
+> | passing a function (correct) | calling a function (incorrect) |
+> |         :-----:              |            :-----:             |
+> |`<button onClick={() => alert('...')}>` |`<button
+> onClick={alert('...')}>` |
