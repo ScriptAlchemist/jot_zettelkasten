@@ -79,12 +79,19 @@ All of these styles are equivalent. Inline event handlers are convenient for sho
 > example:
 >
 > | passing a function (correct)   | calling a function (incorrect) |
-> |--------------------------------|--------------------------------|
+> |          :----:                |            :----:              |
 > |`<button onClick={handleClick}>`| `<button onClick={handleClick()}>`|
-> |-----------------------------------------------------------------|
 >
 > The difference is subtle. In the first example, the `handleClick`
 > function is passed as an `onClick` event handler. This tells React to
 > remember it an only call your function when the user click to button.
+>
+> In the second example, the `()` at the end of `handleClick()` fines
+> the function *immediately* during `rendering`, without any clicks.
+> This is because JavaScript inside of `JSX` `{` and `}` executes right
+> away.
+>
+> When you write code inline, the same pitfall presents itself in
+> a different way:
 >
 > 
