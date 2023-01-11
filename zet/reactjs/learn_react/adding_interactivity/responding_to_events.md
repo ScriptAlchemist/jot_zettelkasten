@@ -269,5 +269,293 @@ function Button({ onClick, children }) {
 }
 ```
 
+Notice how the `App` component does not need to know what `Toolbar` will do with `onPlayMovie` or `onUploadImage`. That's an implementation detail of the `Toolbar`. Here, `Toolbar` passes them down as `onClick` handlers to its `Button`s, but it could later also trigger them on a keyboard shortcut. Naming props after app-specific interactions like `onPlayMovie` gives you the flexibility to change how they're used later.
+
+## Event propagation
+
+Event handlers will also catch events from any children your component might have. We say that an event "bubble" or "propagates" up the tree: it starts with where the event happened, and then goes up the tree.
+
+This `<div>` contains two buttons. Both the `<div>` and each button have their own `onClick` handlers. Which handlers do you think will fire when you click a button?
+
+```javascript
+export default function Toolbar() {
+  return (
+    <div className="Toolbar" onClick={() => {
+      alert('You clicked on the toolbar!');
+    }}>
+      <button onClick={() => alert('Playing!')}>
+        Play Movie
+      </button>
+      <button onClick={() => alert('Uploading!')}>
+        Upload Image
+      </button>
+    </div>
+  );
+}
+```
+
+f you click on either button, its `onClick` will run first, followed by the parent `<div>`'s `onClick`. So two messages will appear. If you click the toolbar itself, only the parent `<div>`'s `onClick` will run.
+
+> #### Pitfall
+>
+> All events propagate in React except `onScroll`, which only works on
+> the JSX tag you attach it to.
+
+## Stopping propagation
+
+Event handlers receive an event object as their only argument. By convention, it's usually called `e`, which stands for "event". You can use this object to read information about the event.
+
+That event object also lets you stop the propagation. If you want to prevent an event from reaching parent components, you need to call `e.stopPropagation()` like this `Button` component does:
+
+```javascript
+function Button({ onClick, children }) {
+  return (
+    <button onClick={e => {
+      e.stopPropagation();
+      onClick();
+    }}>
+      {children}
+    </button>
+  );
+}
+
+export default function Toolbar() {
+  return (
+    <div className="Toolbar" onClick={() => {
+      alert('You clicked on the toolbar!);
+    }}>
+      <Button onClick={() => alert('Playing!')}>
+        Play Movie
+      </Button>
+      <Button onClick={() => alert('Uploading!')}>
+        Upload Image
+      </Button>
+    </div>
+  );
+}
+```
+
+When you click on a button:
+
+1. React calls the `onClick` handler passed to `<button>`.
+2. That handler, defined in `Button`, does the following:
+  * Calls `e.stopPropagation()`, preventing the event from bubbling further.
+  * Calls for `onClick` function, which is a prop passed form the `Toolbar` component
+3. That function, defined in the `Toolbar` component, displays the button's own alert
+4. Since the propagation was stopped, the parent `<div>`'s `onClick` handler does not run
+
+As a result of `e.stopPropagation()`, clicking on the buttons now only shows a single alert (from the `<button>`) rather than the two of them (from the `<button>` and the parent toolbar `<div>`). Clicking a button is not the same thing as clocking the surrounding toolbar, so stopping the propagation makes sense for this UI
+
+> ##### Deep Dive
+>
+> #### Capture phase events
+>
+> In the rare cases, you might need to catch all events on child
+> elements, even if they stopped propagation. For example, maybe you
+> want to log every click to analytics, regardless of the propagation
+> logic. You can do this by adding `Capture` at the end of the event
+> name:
+
+```
+<div onClickCapture={() => { /* this runs first */ }}>
+  <button onClick={e => e.stopPropagation()} />
+  <button onClick={e => e.stopPropagation()} />
+</div>
+```
+
+> Each event propagates in three phases:
+>
+> 1. It travels down, calling all `onClickCapture` handlers.
+> 2. It runs the clicked element's `onClick` handler.
+> 3. It travels upwards, calling all `onClick` handlers.
+>
+> Capture events are useful for code like routers or analytics, but you
+> probably won't use them in app code.
+
+## Passing handlers as alternative to propagation
+
+Notice how this click handler runs a line of code and then calls the `onClick` prop passed by the parent:
+
+```javascript
+function Button({ onClick, children }) {
+  return (
+    <button onClick={e => {
+      e.stopPropagation();
+      onClick();
+    }}>
+      {children}
+    </button>
+  );
+}
+```
+
+You could add more code to this handler before calling the parent `onClick` event handler, too. This pattern provides an alternative to propagation. It lets the child component handle the event, while also letting the parent component specify some additional behavior. Unlike propagation, it's not automatic. But the benefit of this pattern is that you can clearly follow the whole chain code that executes as a result of some event.
+
+If you rely on propagation and it's difficult to trace which handlers execute an why, try this approach instead.
+
+## Preventing default behavior
+
+Some browser events have default behavior associated with them. For example, a `<form>` submit event, which happens when a button inside of it is clicked, will reload the whole page by default:
+
+```javascript
+export defulat function Signup() {
+  return (
+    <form onSubmit={() => alert('Submitting!')}>
+      <input />
+      <button>Send</button>
+    </form>
+  );
+}
+```
+
+You can call `e.preventDefault()` on the event object to stop this from happening:
+
+```javascript
+export default function Signup() {
+  return (
+    <form onSubmit={e => {
+      e.preventDefault();
+      alert('Submitting!');
+    }}>
+      <input />
+      <button>Send</button>
+    </form>
+  );
+}
+```
+
+Don't confuse `e.stopPropagation()` and `e.preventDefault()`. They are both useful, but are unrelated:
+
+* `e.stopPropagation()` stops the event handlers attached to the tags above from firing.
+* `e.preventDefault()` prevents the default browser behavior for a few events that have it.
+
+## Can event handlers have side effects?
+
+Absolutely! Event handlers are the best place for side effects.
+
+Unlike rendering functions, event handlers don't need to be pure, so it's a great place to change something--for example, change an input's value in response to typing, or change a list
+in response to a button press. However, in order to change some information, you first need some way to store it. In react, this is done by using `state, a component's memory`. You will learn all about it on the next page.
+
+## Recap
+
+* You can handle events by passing a function as a prop to and element like `<button>`
+* Event handlers must be passed, not called! `onClick={handleClick}`, not `onClick={handleClick()}`.
+* You can define an event handler function separately or inline.
+* Event handlers are defined inside a component, so they can access props.
+* You can declare an event handler in a parent and pass it as a prop to a child.
+* You can define you own event handler props with application-specific names.
+* Events propagate upwards. Call `e.stopPropagation()` on the first argument to prevent that.
+* Events may have unwanted default browser behavior. Call `e.preventDefault()` to prevent that.
+* Explicitly called an event handler prop from a child handler is a good alternative to propagation.
+
+# Challenges
+
+## Challenge 1 of 2: Fix an event handler
+
+Clicking this button is supposed to switch the page background between white and black. However, nothing happens when you click it. Fix the problem. (Don't worry about the logic inside `handleClick`--that part is fine.)
+
+```javascript
+export default function LightSwitch() {
+  function handleClick() {
+    let bodyStyle = document.body.style;
+    if (bodyStyle.backgroundColor === 'black') {
+      bodyStyle.backgroundColor = 'white';
+    } else {
+      bodyStyle.backgroundColor = 'black';
+    }
+  }
+
+  return (
+    <button onClick={handleClick()}>
+      Toggle the lights
+    </button>
+  );
+}
+```
+
+## Challenge 2 of 2: Wire up the events
+
+This `ColorSwitch` component renders a button. It's supposed to change the page color. Wire it up to the `onChangeColor` event handler prop it receives from the parent so that clicking the button changes the color.
+
+After you do this, notice that clicking the button also increments the page click counter. Your colleague who wrote the parent component insist that `onChangeColor` does not increment any counters. What else might be happening? Fix it so that clicking the button only changes the color, and does not increment the counter.
+
+```javascript
+export default function ColorSwitch({
+  onChangeColor
+}) {
+  return (
+    <button>
+      Change color
+    </button>
+  );
+}
+```
+
+# Solutions
+
+## Challenge 1 of 2
+
+The problem is that `<button onClick={handleClick()}>` calls the `handleClick` function while rendering instead of passing it. Removing the `()` call so that it's `<button onClick={handleClick}>` fixes the issue:
+
+```javascript
+export default function LightSwitch() {
+  function handleClick() {
+    let bodyStyle = document.body.style;
+    if (bodyStyle.backgroundColor === 'black') {
+      bodyStyle.backgroundColor = 'white';
+    } else {
+      bodyStyle.backgroundColor = 'black';
+    }
+  }
+
+  return (
+    <button onClick={handleClick}>
+      Toggle the lights
+    </button>
+  );
+}
+```
+
+Alternatively, you could wrap the call into another function, like `<button onClick={() => handleClick()}>`:
+
+```javascript
+export default function LightSwitch() {
+  function handleClick() {
+    let bodyStyle = document.body.style;
+    if (bodyStyle.backgroundColor === 'black') {
+      bodyStyle.backgroundColor = 'white';
+    } else {
+      bodyStyle.backgroundColor = 'black';
+    }
+  }
+
+  return (
+    <button onClick={() => handleClick()}>
+      Toggle the lights
+    </button>
+  );
+}
+```
+
+## Challenge 2 of 2
+
+First, you need to add the event handler, like `<button onClick={onChangeColor}>`.
+
+However, this introduces the problem of the incrementing counter. If `onchangeColor` does not do this, as your colleague insists, then the problem is that this event propagates up, and some handler above does it. To solve this problem, you need to stop the propagation. But don't forget that you should still call `onChangeColor`.
+
+```javascript
+export default function ColorSwitch({
+  onChangeColor
+}) {
+  return (
+    <button onClick={e => {
+      e.stopPropagation();
+      onChangeColor();
+    }}>
+      Change color
+    </button>
+  );
+}
+```
 
 
