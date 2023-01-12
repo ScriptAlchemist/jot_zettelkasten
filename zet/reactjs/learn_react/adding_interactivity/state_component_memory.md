@@ -1006,5 +1006,166 @@ export default function FeedbackForm() {
 
 ## Challenge 1 of 4
 
+This adds a guarding condition inside both event handlers and disables the buttons when needed:
+
 ```javascript
+import { useState } from 'react';
+import { sculptureList } from './data.js';
+
+export default function Gallery() {
+  const [index, setIndex] = useState(0);
+  const [showMore, setShowMore] = useState(false);
+
+  let hasPrev = index > 0;
+  let hasNext = index < sculptureList.length - 1;
+
+  function handlePrevClick() {
+    if (hasPrev) {
+      setIndex(index - 1);
+    }
+  }
+
+  function handleNextClick() {
+    if (hasNext) {
+      setIndex(index + 1);
+    }
+  }
+
+  function handleMoreClick() {
+    setShowMore(!showMore);
+  }
+
+  let sculpture = sculptureList[index];
+  return (
+    <>
+      <button
+        onClick={handlePrevClick}
+        disabled={!hasPrev}
+      >
+        Previous
+      </button>
+      <button
+        onClick={handleNextClick}
+        disabled={!hasNext}
+      >
+        Next
+      </button>
+      <h2>
+        <i>{sculpture.name} </i> 
+        by {sculpture.artist}
+      </h2>
+      <h3>  
+        ({index + 1} of {sculptureList.length})
+      </h3>
+      <button onClick={handleMoreClick}>
+        {showMore ? 'Hide' : 'Show'} details
+      </button>
+      {showMore && <p>{sculpture.description}</p>}
+      <img 
+        src={sculpture.url} 
+        alt={sculpture.alt}
+      />
+    </>
+  );
+}
+```
+
+## Challenge 2 of 4
+
+First, import `useState` from React. Then replace `firstName` and `lastName` with state variables declared by calling `useState`. Finally, replace every `firstName = ...` assignment with `stFirstName(...)`, and do the same for `lastName`. Don't forget to update `handleReset` too so that the reset button works.
+
+```javascript
+import { useState } from 'react';
+
+export default function Form() {
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+
+  function handleFirstNameChange(e) {
+    setFirstName(e.target.value);
+  }
+
+  function handleLastNameChange(e) {
+    setLastName(e.target.value);
+  }
+
+  function handleReset() {
+    setFirstName('');
+    setLastName('');
+  }
+
+  return (
+    <form onSubmit={e => e.preventDefault()}>
+      <input
+        placeholder="First name"
+        value={firstName}
+        onChange={handleFirstNameChange}
+      />
+      <input
+        placeholder="Last name"
+        value={lastName}
+        onChange={handleLastNameChange}
+      />
+      <h1>Hi, {firstName} {lastName}</h1>
+      <button onClick={handleReset}>Reset</button>
+    </form>
+  );
+}
+```
+
+## Challenge 3 of 4
+
+Hooks can only be called at the top level of the component function. Here, the first `isSent` definition follows this rule, but the `message` definition is nested in a condition.
+
+Move it out of the condition to fix the issue:
+
+```javascript
+import { useState } from 'react';
+
+export default function FeedbackForm() {
+  const [isSent, setIsSent] = useState(false);
+  const [message, setMessage] = useState('');
+
+  if (isSent) {
+    return <h1>Thank you!</h1>;
+  } else {
+    return (
+      <form onSubmit={e => {
+        e.preventDefault();
+        alert(`Sending: "${message}"`);
+        setIsSent(true);
+      }}>
+        <textarea
+          placeholder="Message"
+          value={message}
+          onChange={e => setMessage(e.target.value)}
+        />
+        <br />
+        <button type="submit">Send</button>
+      </form>
+    );
+  }
+}
+```
+
+## Challenge 4 of 4
+
+Here is a fixed version that uses a regular `name` variable declared in the function that needs it:
+
+```javascript
+import { useState } from 'react';
+
+export default function FeedbackForm() {
+  function handleClick() {
+    const name = prompt('What is your name?');
+    alert(`Hello, ${name}!`);
+  }
+
+  return (
+    <button onClick={handleClick}>
+      Greet
+    </button>
+  );
+}
+```
 
