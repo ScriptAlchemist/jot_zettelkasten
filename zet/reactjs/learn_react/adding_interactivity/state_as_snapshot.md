@@ -296,6 +296,8 @@ Does it make a difference whether you put the `alert` before or after the `setWa
 
 # Challenge 1 of 1
 
+Your `alert` should look like this:
+
 ```javascript
 import { useState } from 'react';
 
@@ -321,5 +323,39 @@ export default function TrafficLight() {
   );
 }
 ```
+
+Whether you put it before or after the `setWalk` call makes no
+difference. That render's value of `walk` is fixed. Calling `setWalk`
+will only change if for the next render, but will not affect the event
+handler form the previous render.
+
+This line might seem counter-intuitive at first:
+
+```
+alert(walk ? "Stop is next" : "Walk is next");
+```
+
+But it makes sense if you read it as: "If the traffic light shows 'Walk
+now', the message should say 'Stop is next.'" The `walk` variable inside
+you event handler matches that render's value of `walk` and does not
+change.
+
+You can verify that this is correct by applying the substitution method.
+When `walk` is `true`, you get:
+
+```javascript
+<button onClick={() => {
+  setWalk(false);
+  alert('Stop is next');
+}}>
+  Change to Stop
+</button>
+<h1 style={{color: 'darkgreen'}}>
+  Walk
+</h1>
+```
+
+So clicking "Change to Stop" queues a render with `walk` set to `false`,
+and alerts "Stop is next".
 
 
