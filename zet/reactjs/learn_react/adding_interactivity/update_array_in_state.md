@@ -1042,5 +1042,336 @@ export default function TaskApp() {
 
 ## Challenge 1 of 4:
 
-```javascript
+You can use the `map` function to create a new array, and then use the
+`...` object spread syntax to create a copy of the changed object for
+the new array:
 
+```javascript
+import { useState } from 'react';
+
+const initialProducts = [{
+  id: 0,
+  name: 'Baklava',
+  count: 1,
+}, {
+  id: 1,
+  name: 'Cheese',
+  count: 5,
+}, {
+  id: 2,
+  name: 'Spaghetti',
+  count: 2,
+}];
+
+export default function ShoppingCart() {
+  const [
+    products,
+    setProducts
+  ] = useState(initialProducts)
+
+  function handleIncreaseClick(productId) {
+    setProducts(products.map(product => {
+      if (product.id === productId) {
+        return {
+          ...product,
+          count: product.count + 1
+        };
+      } else {
+        return product;
+      }
+    }))
+  }
+
+  return (
+    <ul>
+      {products.map(product => (
+        <li key={product.id}>
+          {product.name}
+          {' '}
+          (<b>{product.count}</b>)
+          <button onClick={() => {
+            handleIncreaseClick(product.id);
+          }}>
+            +
+          </button>
+        </li>
+      ))}
+    </ul>
+  );
+}
+```
+
+## Challenge 2 of 4
+
+You can first use `map` to produce a new array, and then `filter` to remove products with a `count` set to `0`:
+
+```javascript
+import { useState } from 'react';
+
+const initialProducts = [{
+  id: 0,
+  name: 'Baklava',
+  count: 1,
+}, {
+  id: 1,
+  name: 'Cheese',
+  count: 5,
+}, {
+  id: 2,
+  name: 'Spaghetti',
+  count: 2,
+}];
+
+export default function ShoppingCart() {
+  const [
+    products,
+    setProducts
+  ] = useState(initialProducts)
+
+  function handleIncreaseClick(productId) {
+    setProducts(products.map(product => {
+      if (product.id === productId) {
+        return {
+          ...product,
+          count: product.count + 1
+        };
+      } else {
+        return product;
+      }
+    }))
+  }
+
+  function handleDecreaseClick(productId) {
+    setProducts(products.map(product => {
+      if (product.id === productId) {
+        return { 
+          ...product, 
+          count: product.count - 1 }
+      } else {
+        return product;
+      }
+    }).filter(a => a.count > 0));
+  }
+
+  return (
+    <ul>
+      {products.map(product => (
+            <li key={product.id}>
+              {product.name}
+              {' '}
+              (<b>{product.count}</b>)
+              <button onClick={() => {
+                handleIncreaseClick(product.id);
+              }}>
+                +
+              </button>
+              <button onClick={() => {
+                handleDecreaseClick(product.id);
+              }}>
+                –
+              </button>
+            </li>
+      ))}
+    </ul>
+  );
+}
+```
+
+## Challenge 3 of 4
+
+In `handleAddTodo`, you can use the array spread syntax. In `handleChangeTodo`, you can create a new array with `map`. In `handleDeleteTodo`, you can create a new array with `filter`. Now the list works correctly:
+
+```javascript
+import { useState } from 'react';
+import AddTodo from './AddTodo.js';
+import TaskList from './TaskList.js';
+
+let nextId = 3;
+const initialTodos = [
+  { id: 0, title: 'Buy milk', done: true },
+  { id: 1, title: 'Eat tacos', done: false },
+  { id: 2, title: 'Brew tea', done: false },
+];
+
+export default function TaskApp() {
+  const [todos, setTodos] = useState(
+    initialTodos
+  );
+
+  function handleAddTodo(title) {
+    setTodos([
+      ...todos,
+      {
+        id: nextId++,
+        title: title,
+        done: false
+      }
+    ]);
+  }
+
+  function handleChangeTodo(nextTodo) {
+    setTodos(todos.map(t => {
+      if (t.id === nextTodo.id) {
+        return nextTodo;
+      } else {
+        return t;
+      }
+    }));
+  }
+
+  function handleDeleteTodo(todoId) {
+    setTodos(
+      todos.filter(t => t.id !== todoId)
+    );
+  }
+
+  return (
+    <>
+      <AddTodo
+        onAddTodo={handleAddTodo}
+      />
+      <TaskList
+        todos={todos}
+        onChangeTodo={handleChangeTodo}
+        onDeleteTodo={handleDeleteTodo}
+      />
+    </>
+  );
+}
+```
+
+## Challenge 4 of 4
+
+With Immer, you can write code in the mutative fashion, as long as you're only mutating part of the `draft` that Immer gives you. Here, all mutations are performed on the `draft` so the code works:
+
+```javascript
+import { useState } from 'react';
+import { useImmer } from 'use-immer';
+import AddTodo from './AddTodo.js';
+import TaskList from './TaskList.js';
+
+let nextId = 3;
+const initialTodos = [
+  { id: 0, title: 'Buy milk', done: true },
+  { id: 1, title: 'Eat tacos', done: false },
+  { id: 2, title: 'Brew tea', done: false },
+];
+
+export default function TaskApp() {
+  const [todos, updateTodos] = useImmer(
+    initialTodos
+  );
+
+  function handleAddTodo(title) {
+    updateTodos(draft => {
+      draft.push({
+        id: nextId++,
+        title: title,
+        done: false
+      });
+    });
+  }
+
+  function handleChangeTodo(nextTodo) {
+    updateTodos(draft => {
+      const todo = draft.find(t =>
+        t.id === nextTodo.id
+      );
+      todo.title = nextTodo.title;
+      todo.done = nextTodo.done;
+    });
+  }
+
+  function handleDeleteTodo(todoId) {
+    updateTodos(draft => {
+      const index = draft.findIndex(t =>
+        t.id === todoId
+      );
+      draft.splice(index, 1);
+    });
+  }
+
+  return (
+    <>
+      <AddTodo
+        onAddTodo={handleAddTodo}
+      />
+      <TaskList
+        todos={todos}
+        onChangeTodo={handleChangeTodo}
+        onDeleteTodo={handleDeleteTodo}
+      />
+    </>
+  );
+}
+
+```
+
+You can also mix and match the mutative and non-mutative approaches with
+Immer.
+
+For example, in this version `handleAddTodo` is implemented by mutating
+the Immer `draft`, while `handleChangeTodo` and `handleDeleteTodo` use
+the non-mutative `map` and `filter` methods:
+
+```javascript
+import { useState } from 'react';
+import { useImmer } from 'use-immer';
+import AddTodo from './AddTodo.js';
+import TaskList from './TaskList.js';
+
+let nextId = 3;
+const initialTodos = [
+  { id: 0, title: 'Buy milk', done: true },
+  { id: 1, title: 'Eat tacos', done: false },
+  { id: 2, title: 'Brew tea', done: false },
+];
+
+export default function TaskApp() {
+  const [todos, updateTodos] = useImmer(
+    initialTodos
+  );
+
+  function handleAddTodo(title) {
+    updateTodos(draft => {
+      draft.push({
+        id: nextId++,
+        title: title,
+        done: false
+      });
+    });
+  }
+
+  function handleChangeTodo(nextTodo) {
+    updateTodos(todos.map(todo => {
+      if (todo.id === nextTodo.id) {
+        return nextTodo;
+      } else {
+        return todo;
+      }
+    }));
+  }
+
+  function handleDeleteTodo(todoId) {
+    updateTodos(
+      todos.filter(t => t.id !== todoId)
+    );
+  }
+
+  return (
+    <>
+      <AddTodo
+        onAddTodo={handleAddTodo}
+      />
+      <TaskList
+        todos={todos}
+        onChangeTodo={handleChangeTodo}
+        onDeleteTodo={handleDeleteTodo}
+      />
+    </>
+  );
+}
+```
+
+With Immer, you can pick the style that feels the most natural for each
+separate case.
