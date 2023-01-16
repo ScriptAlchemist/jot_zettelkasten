@@ -525,7 +525,7 @@ let nextId = 3;
 const initialList = [
   { id: 0, title: 'Big Bellies', seen: false },
   { id: 1, title: 'Luner Landscape', seen: false },
-  { id: 2, title: 'Terracotta Army', seen: ture },
+  { id: 2, title: 'Terracotta Army', seen: true },
 ];
 
 export default function BucketList() {
