@@ -275,3 +275,59 @@ export default function Form({ status }) {
 ### Step 2: Determine what triggers those state changes
 
 You can trigger state updates in response to two kinds of inputs:
+
+* Human inputs, like clicking a button, typing in a field, navigating a link.
+* Computer inputs, like a network response arriving, a timeout
+  completing, an image loading.
+
+In both cases, you must set state variables to update the UI. For the form you're developing, you will need to change state in response to a few different inputs:
+
+* `Changing the text input` (human) should switch it from the Empty state to the Typing state of back, depending on whether the text box is empty or not.
+* `Clicking the Submit button` (human) should switch it to the Submitting state.
+* `Successful network response` (computer) should switch it to the Success state
+* `Failed network response` (computer) should switch it to the Error state with the matching error message.
+
+> Notice that human inputs often require `event handlers`.
+
+To help visualize this from, try drawing each state on paper as a labeled circle, and each change between two states as an arrow. You can sketch out many flows this way and sort out bugs long before implementation.
+
+```
+
+[empty] -start-typing-> [typing]-press-submit->[submitting]
+                                               /       \
+                                          Network      Network
+                                          Error        Success
+                                          /               \
+                                         v                 v 
+                                      [Error]            [Success]
+```
+
+### Step 3: Represent the state in memory with `useState`
+
+Next you'll need to represent the visual states of your component in memory with `useState`. Simplicity is key: each piece of state is a moving piece", and you want as few "moving pieces" as possible. More complexity leads to more bugs!
+
+Start with the state the absolutely must be there. For example, you'll need to store the `answer` for the input, and the `error` (if it exists) to store the last error:
+
+```javascript
+cont [answer, setAnswer] = useState('');
+const [error, setError] = useState(null);
+```
+
+Then, you'll need a state variable representing which one of the visual states described earlier you want to display. There's usually more than a single way to represent that in memory, so you'll need to experiment with it.
+
+If you struggle to think of the best way immediately, start by adding enough state that you're definitely sure that all the possible visual state are covered:
+
+```javascript
+const [isEmpty, setIsEmpty] = useState(true);
+const [isTyping, setIsTyping] = useState(false);
+const [isSubmitting, setIsSubmitting] = useState(false);
+const [isSuccess, setIsSuccess] = useState(false);
+const [isError, setIsError] = useState(false);
+```
+
+Your first idea likely won\'t be the best, but that's okay--refactoring state is part of the process!
+
+### Step 4: Remove any non-essential state variables
+
+You want to avoid duplication in the state content so you're only tracking what is essential.
+
