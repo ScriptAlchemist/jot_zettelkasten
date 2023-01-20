@@ -329,5 +329,762 @@ Your first idea likely won\'t be the best, but that's okay--refactoring state is
 
 ### Step 4: Remove any non-essential state variables
 
-You want to avoid duplication in the state content so you're only tracking what is essential.
+You want to avoid duplication in the state content so you're only tracking what is essential. Spending a little time of refactoring your state structure will make your components easier to understand, reduce duplication, and avoid unintended meanings. Your goal is to prevent the cases where the state in memory doesn't represent any valid UI that you'd want a user to see. ( for example, you never want to show an error message and disable the input at the same time, or the user won't be able to correct the error!)
+
+Here are some questions you can ask about your state variables:
+
+* Does this state cause a paradox? For example, `isTyping` and `isSubmitting` can't both be `true`. A paradox usually means that the state is not constrained enough. There are four possible combinations of two booleans, but only three correspond to valid states. To remove the "impossible" state, you can combine these into a `status` that must be one of three values: `'typing'`, `'submitting'`, or `'success'`.
+* Is the same information available in another state variable already? Another paradox: `isEmpty` and `isTyping` can't be true at the same time. By making them separate state variables, you risk them going out of sync and causing bugs. Fortunately, you can remove `isEmpty` and instead check `answer.length === 0`.
+* Can you get the same information from the inverse of another state variable? `isError` is not needed because you can check `error !== null` instead. 
+
+After this clean-up, you're left with 3 (down from 7!) essential state variables:
+
+```javascript
+const [answer, SetAnswer] = useState('');
+const [error, SetError] = useState(null);
+const [status, setStatus] = useStatus('typing'); // 'typing', 'submitting', or 'success'
+```
+
+You know they are essential, because you can't remove any of them without breaking the functionality.
+
+> ##### Deep Dive
+> #### Eliminating "impossible" states with a reducer
+>
+> These three variables area  good enough representation of this form's
+> state. However, there are still come intermediate states that don't
+> fully make sense. For example, a non-null `error` doesn't make sense
+> when `status` is `'success'`.  To model that state more precisely, you
+> can `extreact it into a reducer`. Reducers let you unify multiple
+> state variables into a single object and consolidate all the related
+> logic!
+
+### Step 5: Connect the event handlers to set state
+
+Lastly, create event handlers to set the state variables. Below is the final form, with all event handlers wired up:
+
+```javascript
+import { useState } from 'react';
+
+export default function Form() {
+  const [answer, setAnswer] = useState('');
+  const [error, setError] = useState(null);
+  const [status, setStatus] = useState('typing');
+
+  if (status === 'success') {
+    return <h1>That's right!</h1>
+  }
+
+  async function handleSubmit(e) {
+   e.preventDefault();
+   setStatus('submitting');
+   try {
+     await submitForm(answer);
+     setStatus('success');
+    } catch (err) {
+      setStatus('typing');
+      setError(err);
+    }
+  }
+
+  function handleTextareaChange(e) {
+    setAnswer(e.target.value);
+  }
+
+  return (
+    <>
+      <h2>City quiz</h2>
+      <p>
+        In which city is there a billboard that turns air into drinkable water?
+      </p>
+      <form onSubmit={handleSubmit}>
+        <textarea
+          value={answer}
+          onChange={handleTextareaChange}
+          disabled={status === 'submitting'}
+        />
+        <br />
+        <button disabled={
+          answer.length === 0 ||
+          status === 'submitting'
+        }>
+          Submit
+        </button>
+        {error !== null &&
+          <p className="Error">
+            {error.message}
+          </p>
+        }
+      </form>
+    </>
+  );
+}
+
+function submitForm(answer) {
+  // Pretend it's hitting the network.
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      let shouldError = answer.toLowerCase() !== 'lima'
+      if (shouldError) {
+        reject(new Error('Good guess but a wrong answer. Try again!'));
+      } else {
+        resolve();
+      }
+    }, 1500);
+  });
+}
+```
+
+Although this code is longer than the original imperative example, it sis much less fragile. Expressing all interactions as state changes lets you later introduce new visual states without breaking existing ones. It also lets you change what should be displayed in each state without changing the logic of the interaction itself.
+
+## Recap
+
+* Declarative programming means describing the UI for each visual state rather than micromanaging the UI (imperative)
+* When developing a component:
+  1. Identify all its visual states.
+  2. Determine the human and computer triggers for state change.
+  3. Model the state with `useState`.
+  4. Remove non-essential state to avoid bugs and paradoxes.
+  5. Connect the event handler to set state.
+
+# Challenges
+
+## Challenge 1 of 3: Add and remove CSS class
+
+Make it so that clicking on the picture removes the `background--active` CSS class form the outer `<div>`, but adds the `picture--active` class to the `<img>`. Clicking the background again should restore the original CSS classes. 
+
+Visually, you should expect that clicking on the picture removes the purple background and highlights the picture border. Clicking outside the picture highlights the background, but removes the picture border highlight.
+
+```javascript
+export default function Picture() {
+  return (
+    <div className="background background--active">
+      <img
+        className="picture"
+        alt="Rainbow houses in Kampung Pelangi, Indonesia"
+        src="https://i.imgur.com/5qwVYb1.jpeg"
+      />
+    </div>
+  );
+}
+```
+
+## Challenge 2 of 3: Profile editor
+
+Here is a small form implemented with plain JavaScript and DOM. Play with it to understand its behavior:
+
+`index.html`:
+
+```html
+<form id="form">
+  <label>
+    First name:
+    <b id="firstNameText">Jane</b>
+    <input
+      id="firstNameInput"
+      value="Jane"
+      style="display: none">
+  </label>
+  <label>
+    Last name:
+    <b id="lastNameText">Jacobs</b>
+    <input
+      id="lastNameInput"
+      value="Jacobs"
+      style="display: none">
+  </label>
+  <button type="submit" id="editButton">Edit Profile</button>
+  <p><i id="helloText">Hello, Jane Jacobs!</i></p>
+</form>
+
+<style>
+* { box-sizing: border-box; }
+body { font-family: sans-serif; margin: 20px; padding: 0; }
+label { display: block; margin-bottom: 20px; }
+</style>
+```
+
+`index.js`:
+
+```javascript
+function handleFormSubmit(e) {
+  e.preventDefault();
+  if (editButton.textContent === 'Edit Profile') {
+    editButton.textContent = 'Save Profile';
+    hide(firstNameText);
+    hide(lastNameText);
+    show(firstNameInput);
+    show(lastNameInput);
+  } else {
+    editButton.textContent = 'Edit Profile';
+    hide(firstNameInput);
+    hide(lastNameInput);
+    show(firstNameText);
+    show(lastNameText);
+  }
+}
+
+function handleFirstNameChange() {
+  firstNameText.textContent = firstNameInput.value;
+  helloText.textContent = (
+    'Hello ' +
+    firstNameInput.value + ' ' +
+    lastNameInput.value + '!'
+  );
+}
+
+function handleLastNameChange() {
+  lastNameText.textContent = lastNameInput.value;
+  helloText.textContent = (
+    'Hello ' +
+    firstNameInput.value + ' ' +
+    lastNameInput.value + '!'
+  );
+}
+
+function hide(el) {
+  el.style.display = 'none';
+}
+
+function show(el) {
+  el.style.display = '';
+}
+
+let form = document.getElementById('form');
+let editButton = document.getElementById('editButton');
+let firstNameInput = document.getElementById('firstNameInput');
+let firstNameText = document.getElementById('firstNameText');
+let lastNameInput = document.getElementById('lastNameInput');
+let lastNameText = document.getElementById('lastNameText');
+let helloText = document.getElementById('helloText');
+form.onsubmit = handleFormSubmit;
+firstNameInput.oninput = handleFirstNameChange;
+lastNameInput.oninput = handleLastNameChange;
+```
+
+This form switches between two modes: in the editing mode, you see the inputs, and in the viewing mode, you only see the result. The button label changes between "Edit" and "Save" depending on the mode you're in. When you change the inputs, the welcome message at the bottom updates in real time.
+
+Your task is to reimplement it in React in the sandbox below. For you convenience, the markup was already converted to JSX, but you'll need to make it show and hid the inputs like the original does. 
+
+Make sure that it updates the text at the bottom, too!
+
+```javascript
+export default function EditProfile() {
+  return (
+    <form>
+      <label>
+        First name:{' '}
+        <b>Jane</b>
+        <input />
+      </label>
+      <label>
+        Last name:{' '}
+        <b>Jacobs</b>
+        <input />
+      </label>
+      <button type="submit">
+        Edit Profile
+      </button>
+      <p><i>Hello, Jane Jacobs!</i></p>
+    </form>
+  );
+}
+```
+
+## Challenge 3 of 3: Refactor the imperative solution without React
+
+Hers is the original sandbox from the previous challenge, written imperatively without React:
+
+`index.html`:
+
+```html
+<form id="form">
+  <label>
+    First name:
+    <b id="firstNameText">Jane</b>
+    <input
+      id="firstNameInput"
+      value="Jane"
+      style="display: none">
+  </label>
+  <label>
+    Last name:
+    <b id="lastNameText">Jacobs</b>
+    <input
+      id="lastNameInput"
+      value="Jacobs"
+      style="display: none">
+  </label>
+  <button type="submit" id="editButton">Edit Profile</button>
+  <p><i id="helloText">Hello, Jane Jacobs!</i></p>
+</form>
+
+<style>
+* { box-sizing: border-box; }
+body { font-family: sans-serif; margin: 20px; padding: 0; }
+label { display: block; margin-bottom: 20px; }
+</style>
+```
+
+`index.js`:
+
+```javascript
+function handleFormSubmit(e) {
+  e.preventDefault();
+  if (editButton.textContent === 'Edit Profile') {
+    editButton.textContent = 'Save Profile';
+    hide(firstNameText);
+    hide(lastNameText);
+    show(firstNameInput);
+    show(lastNameInput);
+  } else {
+    editButton.textContent = 'Edit Profile';
+    hide(firstNameInput);
+    hide(lastNameInput);
+    show(firstNameText);
+    show(lastNameText);
+  }
+}
+
+function handleFirstNameChange() {
+  firstNameText.textContent = firstNameInput.value;
+  helloText.textContent = (
+    'Hello ' +
+    firstNameInput.value + ' ' +
+    lastNameInput.value + '!'
+  );
+}
+
+function handleLastNameChange() {
+  lastNameText.textContent = lastNameInput.value;
+  helloText.textContent = (
+    'Hello ' +
+    firstNameInput.value + ' ' +
+    lastNameInput.value + '!'
+  );
+}
+
+function hide(el) {
+  el.style.display = 'none';
+}
+
+function show(el) {
+  el.style.display = '';
+}
+
+let form = document.getElementById('form');
+let editButton = document.getElementById('editButton');
+let firstNameInput = document.getElementById('firstNameInput');
+let firstNameText = document.getElementById('firstNameText');
+let lastNameInput = document.getElementById('lastNameInput');
+let lastNameText = document.getElementById('lastNameText');
+let helloText = document.getElementById('helloText');
+form.onsubmit = handleFormSubmit;
+firstNameInput.oninput = handleFirstNameChange;
+lastNameInput.oninput = handleLastNameChange;
+```
+
+Imagine React didn't exist. Can you refactor this code in a way that makes the logic less fragile and more similar to the React version? What would it look like if the state was explicit, like in React?
+
+If you're struggling to think where to start, the stub below already has most of the structure in place. If you start here, fill in the missing logic in the `updateDom` function. (Refer to the original code where needed.)
+
+`index.html`:
+
+```html
+<form id="form">
+  <label>
+    First name:
+    <b id="firstNameText">Jane</b>
+    <input
+      id="firstNameInput"
+      value="Jane"
+      style="display: none">
+  </label>
+  <label>
+    Last name:
+    <b id="lastNameText">Jacobs</b>
+    <input
+      id="lastNameInput"
+      value="Jacobs"
+      style="display: none">
+  </label>
+  <button type="submit" id="editButton">Edit Profile</button>
+  <p><i id="helloText">Hello, Jane Jacobs!</i></p>
+</form>
+
+<style>
+* { box-sizing: border-box; }
+body { font-family: sans-serif; margin: 20px; padding: 0; }
+label { display: block; margin-bottom: 20px; }
+</style>
+```
+
+`index.js`:
+
+```javascript
+let firstName = 'Jane';
+let lastName = 'Jacobs';
+let isEditing = false;
+
+function handleFormSubmit(e) {
+  e.preventDefault();
+  setIsEditing(!isEditing);
+}
+
+function handleFirstNameChange(e) {
+  setFirstName(e.target.value);
+}
+
+function handleLastNameChange(e) {
+  setLastName(e.target.value);
+}
+
+function setFirstName(value) {
+  firstName = value;
+  updateDOM();
+}
+
+function setLastName(value) {
+  lastName = value;
+  updateDOM();
+}
+
+function setIsEditing(value) {
+  isEditing = value;
+  updateDOM();
+}
+
+function updateDOM() {
+  if (isEditing) {
+    editButton.textContent = 'Save Profile';
+    // TODO: show inputs, hide content
+  } else {
+    editButton.textContent = 'Edit Profile';
+    // TODO: hide inputs, show content
+  }
+  // TODO: update text labels
+}
+
+function hide(el) {
+  el.style.display = 'none';
+}
+
+function show(el) {
+  el.style.display = '';
+}
+
+let form = document.getElementById('form');
+let editButton = document.getElementById('editButton');
+let firstNameInput = document.getElementById('firstNameInput');
+let firstNameText = document.getElementById('firstNameText');
+let lastNameInput = document.getElementById('lastNameInput');
+let lastNameText = document.getElementById('lastNameText');
+let helloText = document.getElementById('helloText');
+form.onsubmit = handleFormSubmit;
+firstNameInput.oninput = handleFirstNameChange;
+lastNameInput.oninput = handleLastNameChange;
+```
+
+# Solutions
+
+## Challenge 1 of 3
+
+This component has two visual state: when the image is active, and when the image is inactive:
+
+* When the image is active, the CSS classes are `background` and `picture picture--active`.
+* When the image is inactive, the CSS classes are `background background--active` and `picture`.
+
+A single boolean state variable is enough to remember whether the image is active. The original task was to remove or add CSS classes. However, in React you need to describe what you want to see rather than manipulate the UI elements. So you need to calculate both CSS classes based on the current state. You also need to `stop the propagation` so that clicking the image doesn't register as a click on the background.
+
+Verify that this version works by clicking the image and then outside of it:
+
+```javascript
+import { useState } from 'react';
+
+export default function Picture() {
+  const [toggle, setToggle] = useState(true);
+  const pictureClass = "picture " +
+    (toggle === false ? 'picture--active': '');
+  const backgroundClass = "background " +
+    (toggle === true ? 'background--active': '');
+
+  function handlePicClick() {
+    setToggle(false);
+  }
+
+  return (
+    <div className={backgroundClass}
+      onClick={() => setToggle(true)}>
+      <img
+        className={pictureClass}
+        onClick={(e) => {
+          e.stopPropagation()
+          setToggle(false)
+        }}
+        alt="Rainbow houses in Kampung Pelangi, Indonesia"
+        src="https://i.imgur.com/5qwVYb1.jpeg"
+      />
+    </div>
+  );
+}
+```
+
+Alternatively, you could return two separate chunks of JSX:
+
+```javascript
+import { useState } from 'react';
+
+export default function Picture() {
+  const [isActive, setIsActive] = useState(false);
+  if (isActive) {
+    return (
+      <div
+        className="background"
+        onClick={() => setIsActive(false)}
+      >
+        <img
+          className="picture picture--active"
+          alt="Rainbow houses in Kampung Pelangi, Indonesia"
+          src="https://i.imgur.com/5qwVYb1.jpeg"
+          onClick={e => e.stopPropagation()}
+        />
+      </div>
+    );
+  }
+  return (
+    <div className="background background--active">
+      <img
+        className="picture"
+        alt="Rainbow houses in Kampung Pelangi, Indonesia"
+        src="https://i.imgur.com/5qwVYb1.jpeg"
+        onClick={() => setIsActive(true)}
+      />
+    </div>
+  );
+}
+```
+
+Keep in mind that if two different JSX chunks describe the same tree, their nesting (first `<div>` -> first `<img>`) has to line up. Otherwise, toggling `isActive` would recreate the whole tree below and `reset its state`. This is why, if a similar JSX tree gets returned in both cases, it is better to write them as a single piece of JSX.
+
+## Challenge 2 of 3:
+
+You will need two state variables to hold the input values: `firstName` and `lastName`. You're also going to need an `isEditing` state variable that holds whether to display the inputs or not. You should not need a `fullName` variable because the full name can always be calculated form the `firstName` and the `lastName`.
+
+Finally, you should use `conditional rendering` to show or hide the inputs depending on `isEditing`.
+
+```javascript
+import { useState } from 'react';
+
+export default function EditProfile() {
+  const [isEditing, setIsEditing] = useState(false);
+  const [firstName, setFirstName] = useState('Jane');
+  const [lastName, setLastName] = useState('Jacobs');
+
+  return (
+    <form onSubmit={e => {
+      e.preventDefault();
+      setIsEditing(!isEditing);
+    }}>
+      <label>
+        First name:{' '}
+        {isEditing ? (
+          <input
+            value={firstName}
+            onChange={e => {
+              setFirstName(e.target.value)
+            }}
+          />
+        ) : (
+          <b>{firstName}</b>
+        )}
+      </label>
+      <label>
+        Last name:{' '}
+        {isEditing ? (
+          <input
+            value={lastName}
+            onChange={e => {
+              setLastName(e.target.value)
+            }}
+          />
+        ) : (
+          <b>{lastName}</b>
+        )}
+      </label>
+      <button type="submit">
+        {isEditing ? 'Save' : 'Edit'} Profile
+      </button>
+      <p><i>Hello, {firstName} {lastName}!</i></p>
+    </form>
+  );
+}
+```
+
+Compare this solution to the original imperative code. How are they different?
+
+## Challenge 3 of 3:
+
+```javascript
+const virtual_dom = {
+  isEditing: false,
+  formSubmit: (e) => {
+    e.preventDefault();
+    virtual_dom.setEditing(!virtual_dom.isEditing);
+  },
+  setEditing: (value) => {
+    virtual_dom.isEditing = value;
+    virtual_dom.updateDOM();
+  },
+  updateDOM: () => {
+    if (virtual_dom.isEditing) {
+      editButton.textContent = 'Save Profile';
+      // show inputs
+      virtual_dom.show(firstNameInput)
+      virtual_dom.show(lastNameInput)
+      // hide content
+      virtual_dom.hide(firstNameText)
+      virtual_dom.hide(lastNameText)
+    } else {
+      editButton.textContent = 'Edit Profile';
+      // hide inputs
+      virtual_dom.hide(firstNameInput)
+      virtual_dom.hide(lastNameInput)
+      // show content
+      virtual_dom.show(firstNameText)
+      virtual_dom.show(lastNameText)
+      firstNameText.innerText = firstNameInput.value;
+      lastNameText.innerText = lastNameInput.value;
+    }
+    // TODO: update text labels
+  },
+  hide:(el) => {
+    el.style.display = 'none';
+  },
+  show:(el) => {
+    el.style.display = '';
+  },
+  pageSetup: () => {
+    let form = document.getElementById('form');
+    let editButton = document.getElementById('editButton');
+    let firstNameInput = document.getElementById('firstNameInput');
+    let firstNameText = document.getElementById('firstNameText');
+    let lastNameInput = document.getElementById('lastNameInput');
+    let lastNameText = document.getElementById('lastNameText');
+    let helloText = document.getElementById('helloText');
+    form.onsubmit = virtual_dom.formSubmit;
+    firstNameInput.addEventListener('input', (e) => {
+      e.preventDefault();
+      name.firstChange(e)
+      helloText.innerText = `Hello ${name.first} ${name.last}!`
+    });
+    lastNameInput.addEventListener('input', (e) => {
+      e.preventDefault();
+      name.firstChange(e)
+      helloText.innerText = `Hello ${name.first} ${name.last}!`
+    });
+  }
+};
+
+const name = {
+  first: 'Jane',
+  last: 'Jacobs',
+  firstChange: (e) => {
+    name.firstSet(e.target.value);
+  },
+  lastChange: (e) => {
+    name.lastSet(e.target.value);
+  },
+  firstSet: (value) => {
+    name.first = value;
+    virtual_dom.updateDOM();
+  },
+  lastSet: (value) => {
+    name.last = value;
+    virtual_dom.updateDOM();
+  }
+}
+
+
+virtual_dom.pageSetup();
+```
+
+The missing logic included toggling the display of inputs and content, and updating the labels:
+
+```javascript
+let firstName = 'Jane';
+let lastName = 'Jacobs';
+let isEditing = false;
+
+function handleFormSubmit(e) {
+  e.preventDefault();
+  setIsEditing(!isEditing);
+}
+
+function handleFirstNameChange(e) {
+  setFirstName(e.target.value);
+}
+
+function handleLastNameChange(e) {
+  setLastName(e.target.value);
+}
+
+function setFirstName(value) {
+  firstName = value;
+  updateDOM();
+}
+
+function setLastName(value) {
+  lastName = value;
+  updateDOM();
+}
+
+function setIsEditing(value) {
+  isEditing = value;
+  updateDOM();
+}
+
+function updateDOM() {
+  if (isEditing) {
+    editButton.textContent = 'Save Profile';
+    hide(firstNameText);
+    hide(lastNameText);
+    show(firstNameInput);
+    show(lastNameInput);
+  } else {
+    editButton.textContent = 'Edit Profile';
+    hide(firstNameInput);
+    hide(lastNameInput);
+    show(firstNameText);
+    show(lastNameText);
+  }
+  firstNameText.textContent = firstName;
+  lastNameText.textContent = lastName;
+  helloText.textContent = (
+    'Hello ' +
+    firstName + ' ' +
+    lastName + '!'
+  );
+}
+
+function hide(el) {
+  el.style.display = 'none';
+}
+
+function show(el) {
+  el.style.display = '';
+}
+
+let form = document.getElementById('form');
+let editButton = document.getElementById('editButton');
+let firstNameInput = document.getElementById('firstNameInput');
+let firstNameText = document.getElementById('firstNameText');
+let lastNameInput = document.getElementById('lastNameInput');
+let lastNameText = document.getElementById('lastNameText');
+let helloText = document.getElementById('helloText');
+form.onsubmit = handleFormSubmit;
+firstNameInput.oninput = handleFirstNameChange;
+lastNameInput.oninput = handleLastNameChange;
+```
+
+The `updateDOM` function you wrote shows what React does under the hood when you set the state. However, React also avoids touching the DOM for properties that have not changed since last time they were set.)
+
 
