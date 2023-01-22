@@ -1065,3 +1065,1011 @@ export default function TravelPlan() {
 ```
 
 Now that the state is "flat" (also known as "normalized"), updating nested items becomes easier.
+
+In order to remove a place now, you only need to update two levels of state:
+
+* The updated version of its parent place should exclude the removed ID from its `childIds` array.
+* The updated version of the root "table" object should include the updated version of the parent place.
+
+Here is an example of how you could go about it:
+
+`places.js`:
+
+```javascript
+export const initialTravelPlan = {
+  0: {
+    id: 0,
+    title: '(Root)',
+    childIds: [1, 43, 47],
+  },
+  1: {
+    id: 1,
+    title: 'Earth',
+    childIds: [2, 10, 19, 27, 35]
+  },
+  2: {
+    id: 2,
+    title: 'Africa',
+    childIds: [3, 4, 5, 6 , 7, 8, 9]
+  },
+  3: {
+    id: 3,
+    title: 'Botswana',
+    childIds: []
+  },
+  4: {
+    id: 4,
+    title: 'Egypt',
+    childIds: []
+  },
+  5: {
+    id: 5,
+    title: 'Kenya',
+    childIds: []
+  },
+  6: {
+    id: 6,
+    title: 'Madagascar',
+    childIds: []
+  },
+  7: {
+    id: 7,
+    title: 'Morocco',
+    childIds: []
+  },
+  8: {
+    id: 8,
+    title: 'Nigeria',
+    childIds: []
+  },
+  9: {
+    id: 9,
+    title: 'South Africa',
+    childIds: []
+  },
+  10: {
+    id: 10,
+    title: 'Americas',
+    childIds: [11, 12, 13, 14, 15, 16, 17, 18],
+  },
+  11: {
+    id: 11,
+    title: 'Argentina',
+    childIds: []
+  },
+  12: {
+    id: 12,
+    title: 'Brazil',
+    childIds: []
+  },
+  13: {
+    id: 13,
+    title: 'Barbados',
+    childIds: []
+  },
+  14: {
+    id: 14,
+    title: 'Canada',
+    childIds: []
+  },
+  15: {
+    id: 15,
+    title: 'Jamaica',
+    childIds: []
+  },
+  16: {
+    id: 16,
+    title: 'Mexico',
+    childIds: []
+  },
+  17: {
+    id: 17,
+    title: 'Trinidad and Tobago',
+    childIds: []
+  },
+  18: {
+    id: 18,
+    title: 'Venezuela',
+    childIds: []
+  },
+  19: {
+    id: 19,
+    title: 'Asia',
+    childIds: [20, 21, 22, 23, 24, 25, 26],
+  },
+  20: {
+    id: 20,
+    title: 'China',
+    childIds: []
+  },
+  21: {
+    id: 21,
+    title: 'Hong Kong',
+    childIds: []
+  },
+  22: {
+    id: 22,
+    title: 'India',
+    childIds: []
+  },
+  23: {
+    id: 23,
+    title: 'Singapore',
+    childIds: []
+  },
+  24: {
+    id: 24,
+    title: 'South Korea',
+    childIds: []
+  },
+  25: {
+    id: 25,
+    title: 'Thailand',
+    childIds: []
+  },
+  26: {
+    id: 26,
+    title: 'Vietnam',
+    childIds: []
+  },
+  27: {
+    id: 27,
+    title: 'Europe',
+    childIds: [28, 29, 30, 31, 32, 33, 34],
+  },
+  28: {
+    id: 28,
+    title: 'Croatia',
+    childIds: []
+  },
+  29: {
+    id: 29,
+    title: 'France',
+    childIds: []
+  },
+  30: {
+    id: 30,
+    title: 'Germany',
+    childIds: []
+  },
+  31: {
+    id: 31,
+    title: 'Italy',
+    childIds: []
+  },
+  32: {
+    id: 32,
+    title: 'Portugal',
+    childIds: []
+  },
+  33: {
+    id: 33,
+    title: 'Spain',
+    childIds: []
+  },
+  34: {
+    id: 34,
+    title: 'Turkey',
+    childIds: []
+  },
+  35: {
+    id: 35,
+    title: 'Oceania',
+    childIds: [36, 37, 38, 39, 40, 41,, 42],
+  },
+  36: {
+    id: 36,
+    title: 'Australia',
+    childIds: []
+  },
+  37: {
+    id: 37,
+    title: 'Bora Bora (French Polynesia)',
+    childIds: []
+  },
+  38: {
+    id: 38,
+    title: 'Easter Island (Chile)',
+    childIds: []
+  },
+  39: {
+    id: 39,
+    title: 'Fiji',
+    childIds: []
+  },
+  40: {
+    id: 40,
+    title: 'Hawaii (the USA)',
+    childIds: []
+  },
+  41: {
+    id: 41,
+    title: 'New Zealand',
+    childIds: []
+  },
+  42: {
+    id: 42,
+    title: 'Vanuatu',
+    childIds: []
+  },
+  43: {
+    id: 43,
+    title: 'Moon',
+    childIds: [44, 45, 46]
+  },
+  44: {
+    id: 44,
+    title: 'Rheita',
+    childIds: []
+  },
+  45: {
+    id: 45,
+    title: 'Piccolomini',
+    childIds: []
+  },
+  46: {
+    id: 46,
+    title: 'Tycho',
+    childIds: []
+  },
+  47: {
+    id: 47,
+    title: 'Mars',
+    childIds: [48, 49]
+  },
+  48: {
+    id: 48,
+    title: 'Corn Town',
+    childIds: []
+  },
+  49: {
+    id: 49,
+    title: 'Green Hill',
+    childIds: []
+  }
+};
+```
+
+`App.js`:
+
+```javascript
+import { useState } from 'react';
+import { initialTravelPlan } from './places.js';
+
+export default function TravelPlan() {
+  const [plan, setPlan] = useState(initialTravelPlan);
+
+  funciton handleComplete(parentId, childId) {
+    const parent = plan[parentId];
+    // Create a new version of the parent place
+    // that doesnt' include this child ID.
+    const nextParent = {
+      ...parent,
+      childIds: parent.childIds
+        .filter(id => !== childId)
+    };
+    // Update the root state object...
+    setPlan({
+      ...plan,
+      // ...so that it has the updated parent.
+      [parentId]: nextParent
+    });
+  }
+
+  const root = plan[0];
+  const planetIds = root.childIds;
+  return (
+    <>
+      <h2>Places to visit</h2>
+      <ol>
+        {planetIds.map(id => (
+          <PlaceTree
+            key={id}
+            id={id}
+            parentId={0}
+            placesById={plan}
+            onComplete={handleComplete}
+          />
+        ))}
+      </ol>
+    </>
+  );
+}
+
+function PlaceTree({ id, parentId, placesById, onComplete }) {
+  const place = placesById[id];
+  const childIds = place.childIds;
+  return (
+   <li>
+     {place.title}
+     <button onClick={() => {
+       onComplete(parentId, id);
+      }}>
+        Complete
+      </button>
+      {childIds.length > 0 &&
+        <ol>
+          {childIds.map(childId => (
+            <PlaceTree
+              key={childId}
+              id={childId}
+              parentId={id}
+              placesById={placesById}
+              onComplete={onComplete}
+            />
+          ))}
+        </ol>
+      }
+    </li>
+  );
+}
+```
+
+You can nest state as much as you like, but making it "flat" can solve numerous problems. It makes state easier to update, and it helps ensure you don't have duplication in different parts of a nested object.
+
+> ##### Deep Dive
+> #### Improving memory usage
+>
+> Ideally, you would also remove the deleted items (and their children!)
+> form the "table" object to improve memory usage. This version doest
+> that. It also `uses Immer` to make the update logic more concise.
+
+`package.json`:
+
+```json
+{
+  "dependencies": {
+    "immer": "1.7.3",
+    "react": "latest",
+    "react-dom": "latest",
+    "react-scripts": "latest",
+    "use-immer": "0.5.1"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test --env=jsdom",
+    "eject": "react-scripts eject"
+  },
+  "devDependencies": {}
+}
+```
+
+`places.js`:
+
+```javascript
+export const initialTravelPlan = {
+  0: {
+    id: 0,
+    title: '(Root)',
+    childIds: [1, 43, 47],
+  },
+  1: {
+    id: 1,
+    title: 'Earth',
+    childIds: [2, 10, 19, 27, 35]
+  },
+  2: {
+    id: 2,
+    title: 'Africa',
+    childIds: [3, 4, 5, 6 , 7, 8, 9]
+  },
+  3: {
+    id: 3,
+    title: 'Botswana',
+    childIds: []
+  },
+  4: {
+    id: 4,
+    title: 'Egypt',
+    childIds: []
+  },
+  5: {
+    id: 5,
+    title: 'Kenya',
+    childIds: []
+  },
+  6: {
+    id: 6,
+    title: 'Madagascar',
+    childIds: []
+  },
+  7: {
+    id: 7,
+    title: 'Morocco',
+    childIds: []
+  },
+  8: {
+    id: 8,
+    title: 'Nigeria',
+    childIds: []
+  },
+  9: {
+    id: 9,
+    title: 'South Africa',
+    childIds: []
+  },
+  10: {
+    id: 10,
+    title: 'Americas',
+    childIds: [11, 12, 13, 14, 15, 16, 17, 18],
+  },
+  11: {
+    id: 11,
+    title: 'Argentina',
+    childIds: []
+  },
+  12: {
+    id: 12,
+    title: 'Brazil',
+    childIds: []
+  },
+  13: {
+    id: 13,
+    title: 'Barbados',
+    childIds: []
+  },
+  14: {
+    id: 14,
+    title: 'Canada',
+    childIds: []
+  },
+  15: {
+    id: 15,
+    title: 'Jamaica',
+    childIds: []
+  },
+  16: {
+    id: 16,
+    title: 'Mexico',
+    childIds: []
+  },
+  17: {
+    id: 17,
+    title: 'Trinidad and Tobago',
+    childIds: []
+  },
+  18: {
+    id: 18,
+    title: 'Venezuela',
+    childIds: []
+  },
+  19: {
+    id: 19,
+    title: 'Asia',
+    childIds: [20, 21, 22, 23, 24, 25, 26],
+  },
+  20: {
+    id: 20,
+    title: 'China',
+    childIds: []
+  },
+  21: {
+    id: 21,
+    title: 'Hong Kong',
+    childIds: []
+  },
+  22: {
+    id: 22,
+    title: 'India',
+    childIds: []
+  },
+  23: {
+    id: 23,
+    title: 'Singapore',
+    childIds: []
+  },
+  24: {
+    id: 24,
+    title: 'South Korea',
+    childIds: []
+  },
+  25: {
+    id: 25,
+    title: 'Thailand',
+    childIds: []
+  },
+  26: {
+    id: 26,
+    title: 'Vietnam',
+    childIds: []
+  },
+  27: {
+    id: 27,
+    title: 'Europe',
+    childIds: [28, 29, 30, 31, 32, 33, 34],
+  },
+  28: {
+    id: 28,
+    title: 'Croatia',
+    childIds: []
+  },
+  29: {
+    id: 29,
+    title: 'France',
+    childIds: []
+  },
+  30: {
+    id: 30,
+    title: 'Germany',
+    childIds: []
+  },
+  31: {
+    id: 31,
+    title: 'Italy',
+    childIds: []
+  },
+  32: {
+    id: 32,
+    title: 'Portugal',
+    childIds: []
+  },
+  33: {
+    id: 33,
+    title: 'Spain',
+    childIds: []
+  },
+  34: {
+    id: 34,
+    title: 'Turkey',
+    childIds: []
+  },
+  35: {
+    id: 35,
+    title: 'Oceania',
+    childIds: [36, 37, 38, 39, 40, 41,, 42],
+  },
+  36: {
+    id: 36,
+    title: 'Australia',
+    childIds: []
+  },
+  37: {
+    id: 37,
+    title: 'Bora Bora (French Polynesia)',
+    childIds: []
+  },
+  38: {
+    id: 38,
+    title: 'Easter Island (Chile)',
+    childIds: []
+  },
+  39: {
+    id: 39,
+    title: 'Fiji',
+    childIds: []
+  },
+  40: {
+    id: 40,
+    title: 'Hawaii (the USA)',
+    childIds: []
+  },
+  41: {
+    id: 41,
+    title: 'New Zealand',
+    childIds: []
+  },
+  42: {
+    id: 42,
+    title: 'Vanuatu',
+    childIds: []
+  },
+  43: {
+    id: 43,
+    title: 'Moon',
+    childIds: [44, 45, 46]
+  },
+  44: {
+    id: 44,
+    title: 'Rheita',
+    childIds: []
+  },
+  45: {
+    id: 45,
+    title: 'Piccolomini',
+    childIds: []
+  },
+  46: {
+    id: 46,
+    title: 'Tycho',
+    childIds: []
+  },
+  47: {
+    id: 47,
+    title: 'Mars',
+    childIds: [48, 49]
+  },
+  48: {
+    id: 48,
+    title: 'Corn Town',
+    childIds: []
+  },
+  49: {
+    id: 49,
+    title: 'Green Hill',
+    childIds: []
+  }
+};
+```
+
+`App.js`:
+
+```javascript
+import { useImmer } from 'use-immer';
+import { initialTravelPlan } from './places.js';
+
+export default function TravelPlan() {
+  const [plan, updatePlan] = useImmer(initialTravelPlan);
+
+  function handleComplete(parentId, childId) {
+    updatePlan(draft => {
+      // Remove from the parent place's child IDs.
+      const parent = draft[parentId];
+      parent.childIds = parent.childIds
+        .filter(id => id !== childId);
+
+      // Forget this place and all its subtree.
+      deleteAllChildren(childId);
+      function deleteAllChildren(id) {
+        const place = draft[id];
+        place.childIds.forEach(deleteAllChildren);
+        delete draft[id];
+      }
+    });
+  }
+
+  const root = plan[0];
+  const planetIds = root.childIds;
+  return (
+    <>
+      <h2>Places to visit</h2>
+      <ol>
+        {planetIds.map(id => (
+          <PlaceTree
+            key={id}
+            id={id}
+            parentId={0}
+            placesById={plan}
+            onComplete={handleComplete}
+          />
+        ))}
+      </ol>
+    </>
+  );
+}
+
+function PlaceTree({ id, parentId, placesById, onComplete }) {
+  const place = placesById[id];
+  const childIds = place.childIds;
+  return (
+    <li>
+      {place.title}
+      <button onClick={() => {
+        onComplete(parentId, id);
+      }}>
+        Complete
+      </button>
+      {childIds.length > 0 &&
+        <ol>
+          {childIds.map(childId => (
+            <PlaceTree
+              key={childId}
+              id={childId}
+              parentId={id}
+              placesById={placesById}
+              onComplete={onComplete}
+            />
+          ))}
+        </ol>
+      }
+    </li>
+  );
+}
+```
+
+Sometimes, you can also reduce state nesting by moving some of the nested state into the child components. This works well for ephemeral UI state that doesn't need to be stored, like whether an item is hovered.
+
+## Recap
+
+* If two state variables always update together, consider merging them into one.
+* Choose your state variables carefully to avoid creating "impossible" states.
+* Structure your state in a way that reduces the changes that you'll make a mistake updating it.
+* Avoid redundant and duplicate state so that you don't need to keep it in sync.
+* Don't  put props into state unless you specifically want to prevent updates.
+* For UI patterns like selection, Keep ID or index in state instead of the object itself.
+* If updating deeply nested state is complicated, try flattening it.
+
+# Challenges
+
+## Challenge 1 of 4: Fix a component that's not updating
+
+This `Clock` component receives two props: `color` and `time`. When you select a different color in the select box, the `Clock` component receives a different `color` prop from its parent component. However, for some reason, the displayed color doesn't update. Why? Fix the problem.
+
+```javascript
+import { useState } from 'react';
+
+export default function Clock(props) {
+  const [color, setColor] = useState(props.color);
+  return (
+    <h1 style={{ color: color }}>
+      {props.time}
+    </h1>
+  );
+}
+```
+
+# Challenge 2 of 4: Fix a broken packing list
+
+This packing list has a footer that shows how many items are packed, and how many items there are overall. It seems to work at first, but it is buggy. For example, if you mark an item as packed and then delete it, the counter will not be updated correctly. Fix the counter so that it's always correct.
+
+```javascript
+import { useState } from 'react';
+import AddItem from './AddItem.js';
+import PackingList from './PackingList.js';
+
+let nextId = 3;
+const initialItems = [
+  { id: 0, title: 'Warm socks', packed: true },
+  { id: 1, title: 'Travel journal', packed: false },
+  { id: 2, title: 'Watercolors', packed: false },
+];
+
+export default function TravelPlan() {
+  const [items, setItems] = useState(initialItems);
+  const [total, setTotal] = useState(3);
+  const [packed, setPacked] = useState(1);
+
+  function handleAddItem(title) {
+    setTotal(total + 1);
+    setItems([
+      ...items,
+      {
+        id: nextId++,
+        title: title,
+        packed: false
+      }
+    ]);
+  }
+
+  function handleChangeItem(nextItem) {
+    if (nextItem.packed) {
+      setPacked(packed + 1);
+    } else {
+      setPacked(packed - 1);
+    }
+    setItems(items.map(item => {
+      if (item.id === nextItem.id) {
+        return nextItem;
+      } else {
+        return item;
+      }
+    }));
+  }
+
+  function handleDeleteItem(itemId) {
+    setTotal(total - 1);
+    setItems(
+      items.filter(item => item.id !== itemId)
+    );
+  }
+
+  return (
+    <>
+      <AddItem
+        onAddItem={handleAddItem}
+      />
+      <PackingList
+        items={items}
+        onChangeItem={handleChangeItem}
+        onDeleteItem={handleDeleteItem}
+      />
+      <hr />
+      <b>{packed} out of {total} packed!</b>
+    </>
+  );
+}
+```
+
+## Challenge 3 of 4: Fix the disappearing selection
+
+There is a list of `letters` in state. When you hover or focus a particular letter, it gets highlighted. The currently highlighted letter is stored in the `highlightedLetter` state variable. You can "star" and "unstar" individual letters, which updates the `letters` array in state.
+
+This code works, but there is a minor UI glitch. When you press "Star" or "Unstar", the highlighting disappears for a moment. However, it reappears as soon as you move your pointer or switch to another letter with keyboard. Why is this happening? Fix it so that the highlighting doesn't disappear after the button click.
+
+`data.js`:
+
+```javascript
+export const initialLetters = [{
+  id: 0,
+  subject: 'Ready for adventure?',
+  isStarred: true,
+}, {
+  id: 1,
+  subject: 'Time to check in!',
+  isStarred: false,
+}, {
+  id: 2,
+  subject: 'Festival Begins in Just SEVEN Days!',
+  isStarred: false,
+}];
+```
+
+`Letter.js`:
+
+```javascript
+export default function Letter({
+  letter,
+  isHighlighted,
+  onHover,
+  onToggleStar,
+}) {
+  return (
+    <li
+      className={
+        isHighlighted ? 'highlighted' : ''
+      }
+      onFocus={() => {
+        onHover(letter);
+      }}
+      onPointerMove={() => {
+        onHover(letter);
+      }}
+    >
+      <button onClick={() => {
+        onToggleStar(letter);
+      }}>
+        {letter.isStarred ? 'Unstar' : 'Star'}
+      </button>
+      {letter.subject}
+    </li>
+  )
+}
+```
+
+`App.js`:
+
+```javascript
+import { useState } from 'react';
+import { initialLetters } from './data.js';
+import Letter from './Letter.js';
+
+export default function MailClient() {
+  const [letters, setLetters] = useState(initialLetters);
+  const [highlightedLetter, setHighlightedLetter] = useState(null);
+
+  function handleHover(letter) {
+    setHighlightedLetter(letter);
+  }
+
+  function handleStar(starred) {
+    setLetters(letters.map(letter => {
+      if (letter.id === starred.id) {
+        return {
+          ...letter,
+          isStarred: !letter.isStarred
+        };
+      } else {
+        return letter;
+      }
+    }));
+  }
+
+  return (
+    <>
+      <h2>Inbox</h2>
+      <ul>
+        {letters.map(letter => (
+          <Letter
+            key={letter.id}
+            letter={letter}
+            isHighlighted={
+              letter === highlightedLetter
+            }
+            onHover={handleHover}
+            onToggleStar={handleStar}
+          />
+        ))}
+      </ul>
+    </>
+  );
+}
+```
+
+## Challenge 4 of 4: Implement multiple selection
+
+In this example, each `Letter` has an `isSelected` prop and an `onToggle` handler that marks it as selected. This works, but the state is stored as a `selectedId` (either `null` or an ID), so only one letter can get selected at any given time.
+
+Change the state structure to support multiple selection. (How would you structure it? Thing about this before writing the code.) Each checkbox should become indepenent form the others. Clicking a selected letter should uncheck it. Finally, the footer should show the correct number of the selected items.
+
+`data.js`:
+
+```javascript
+export const letters = [{
+  id: 0,
+  subject: 'Ready for adventure?',
+  isStarred: true,
+}, {
+  id: 1,
+  subject: 'Time to check in!',
+  isStarred: false,
+}, {
+  id: 2,
+  subject: 'Festival Begins in Just SEVEN Days!',
+  isStarred: false,
+}];
+```
+
+`Letter.js`:
+
+```javascript
+export default function Letter({
+  letter,
+  onToggle,
+  isSelected,
+}) {
+  return (
+    <li className={
+      isSelected ? 'selected' : ''
+    }>
+      <label>
+        <input
+          type="checkbox"
+          checked={isSelected}
+          onChange={() => {
+            onToggle(letter.id);
+          }}
+        />
+        {letter.subject}
+      </label>
+    </li>
+  )
+}
+```
+
+`App.js`:
+
+```javascript
+import { useState } from 'react';
+import { letters } from './data.js';
+import Letter from './Letter.js';
+
+export default function MailClient() {
+  const [selectedId, setSelectedId] = useState(null);
+
+  // TODO: allow multiple selection
+  const selectedCount = 1;
+
+  function handleToggle(toggledId) {
+    // TODO: allow multiple selection
+    setSelectedId(toggledId);
+  }
+
+  return (
+    <>
+      <h2>Inbox</h2>
+      <ul>
+        {letters.map(letter => (
+          <Letter
+            key={letter.id}
+            letter={letter}
+            isSelected={
+              // TODO: allow multiple selection
+              letter.id === selectedId
+            }
+            onToggle={handleToggle}
+          />
+        ))}
+        <hr />
+        <p>
+          <b>
+            You selected {selectedCount} letters
+          </b>
+        </p>
+      </ul>
+    </>
+  );
+}
+```
+
+
+k
