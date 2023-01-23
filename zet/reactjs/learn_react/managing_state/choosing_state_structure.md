@@ -2159,13 +2159,178 @@ export default function TravelPlan() {
 
 ## Challenge 3 of 4:
 
-```javascript
+The problem is that you're holding the letter object in
+`highlightedLetter`. But you're also holding the same information in the
+`letters` array. So your state has duplication! When you pudate the
+`letters` array after the button click, you creaete a new letter obejct
+which is different from `highlightedLetter`. This is why
+`highlightedLetter === letter` check becomes `false`, and the
+highlight disappears. It reappears the next time you call
+`setHighlightedLetter` when the pointer moves.
 
+To fix this issue, remove the duplication from state. Instead of storing
+the letter itself in two places, store the `highlightId` instead. Then
+you can check `isHighlighted` for each letter with `letter.id ===
+highlightedId`, which will work even if the `letter` object has changed
+since the last render.
+
+```javascript
+import { useState } from 'react';
+import { initialLetters } from './data.js';
+import Letter from './Letter.js';
+
+export default function MailClient() {
+  const [letters, setLetters] = useState(initialLetters);
+  const [highlightedId, setHighlightedId ] = useState(null);
+
+  function handleHover(letterId) {
+    setHighlightedId(letterId);
+  }
+
+  function handleStar(starredId) {
+    setLetters(letters.map(letter => {
+      if (letter.id === starredId) {
+        return {
+          ...letter,
+          isStarred: !letter.isStarred
+        };
+      } else {
+        return letter;
+      }
+    }));
+  }
+
+  return (
+    <>
+      <h2>Inbox</h2>
+      <ul>
+        {letters.map(letter => (
+          <Letter
+            key={letter.id}
+            letter={letter}
+            isHighlighted={
+              letter.id === highlightedId
+            }
+            onHover={handleHover}
+            onToggleStar={handleStar}
+          />
+        ))}
+      </ul>
+    </>
+  );
+}
 ```
 
 ## Challenge 4 of 4:
 
-```javascript
+Instead of a single `selectedId`, keep a `selectedIds` array in state.
+For example, if you select the first and last letter, it would contains
+`[0, 2]`. When nothing is selected, it would be an empty `[]` array:
 
+```javascript
+import { useState } from 'react';
+import { letters } from './data.js';
+import Letter from './Letter.js';
+
+export default function MailClient() {
+  const [selectedIds, setSelectedIds] = useState([]);
+  const selectedCount = selectedIds.length;
+
+  function handleToggle(toggledId) {
+    if (selectedIds.includes(toggledId)) {
+      setSelectedIds(selectedIds.filter(a => a !== toggledId));
+    } else {
+      setSelectedIds([...selectedIds, toggledId])
+    }
+  }
+
+  return (
+    <>
+      <h2>Inbox</h2>
+      <ul>
+        {letters.map(letter => (
+          <Letter
+            key={letter.id}
+            letter={letter}
+            isSelected={
+              selectedIds.includes(letter.id)
+            }
+            onToggle={handleToggle}
+          />
+        ))}
+        <hr />
+        <p>
+          <b>
+            You selected {selectedCount} letters
+          </b>
+        </p>
+      </ul>
+    </>
+  );
+}
 ```
 
+One minor downside of using an array is that for each item, you're
+calling `selectedIds.includes(letter.id)` to check whether it's
+selected. If the array is very large, this can become a performance
+problem because array search with `includes()` takes linear time, and
+you're doing this search for each individual item.
+
+To fix this, you can hold a `Set` in state instead, which provides a
+fast `has()` operation:
+
+```javascript
+import { useState } from 'react';
+import { letters } from './data.js';
+import Letter from './Letter.js';
+
+export default function MailClient() {
+  const [selectedIds, setSelectedIds] = useState(
+    new Set()
+  );
+
+  const selectedCount = selectedIds.size;
+
+  function handleToggle(toggledId) {
+    // Create a copy (to avoid mutation).
+    const nextIds = new Set(selectedIds);
+    if (nextIds.has(toggledId)) {
+      nextIds.delete(toggledId);
+    } else {
+      nextIds.add(toggledId);
+    }
+    setSelectedIds(nextIds);
+  }
+
+  return (
+    <>
+      <h2>Inbox</h2>
+      <ul>
+        {letters.map(letter => (
+          <Letter
+            key={letter.id}
+            letter={letter}
+            isSelected={
+              selectedIds.has(letter.id)
+            }
+            onToggle={handleToggle}
+          />
+        ))}
+        <hr />
+        <p>
+          <b>
+            You selected {selectedCount} letters
+          </b>
+        </p>
+      </ul>
+    </>
+  );
+}
+```
+
+Now each item does a `selectedIds.has(letter.id)` check, which is very
+fast.
+
+Keep in mind that you should not mutate objects in state, and that
+includes Sets, too. This is why the `handleToggle` function creates a
+copy of the Set first, and then updates that copy.
