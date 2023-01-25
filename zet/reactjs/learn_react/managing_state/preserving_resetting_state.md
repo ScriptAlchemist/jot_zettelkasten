@@ -823,4 +823,649 @@ const contacts = [
 > ways to keep the state "alive" for a component that's no longer
 > visible:
 >
-> * 
+> * You could render all chats instead of just the current one, but hide all the other with CSS. the chats would not get removed form the tree, so their local state would be preserved. This solution works great for simple UIs. But it can get very slow if the hidden trees are large and contain a lot of DOM nodes.
+> * You could life state up and hold the pending message for each recipient in the parent component. This way, when the child components get removed, it doesn't matter, because it's the parent that keeps the important information. This is the most common solution.
+> * You might also use a different source in addition to React state. For example, you probably want a message draft to persist even if the user accidentally closes the page. To implement this, you could have the `Chat` component initialize its state by reading from the `localStorage`, and save the drafts there too.
+>
+> No matter which strategy you pick, a chat with Alice is conceptually
+> distinct form a chat with Bob, so it makes sense to give a `key` to
+> the `<Chat>` tree based on the current recipient.
+
+## Recap
+
+* React keeps state for as long as the same component is rendered at the same position.
+* State is not kept in JSX tags. It's associated with the tree position in which you put that JSX.
+* You can force a sub tree to reset its state by giving it a different key.
+* Don't nest component definitions, or you'll reset state by accident.
+
+# Challenges
+
+## Challenge 1 of 5: Fix disappearing input text
+
+This example shows a message when you press the button. However, pressing the button also accidentally resets the input. Why does this happen? Fix it so that pressing the button does not reset the input text.
+
+```javascript
+import { useState } from 'react';
+
+export default function App() {
+  const [showHint, setShowHint] = useState(false);
+  if (showHint) {
+    return (
+      <div>
+        <p><i>Hint: Your favorite city?</i></p>
+        <Form />
+        <button onClick={() => {
+          setShowHint(false);
+        }}>Hide hint</button>
+      </div>
+    );
+  }
+  return (
+    <div>
+      <Form />
+      <button onClick={() => {
+        setShowHint(true);
+      }}>Show hint</button>
+    </div>
+  );
+}
+
+function Form() {
+  const [text, setText] = useState('');
+  return (
+    <textarea
+      value={text}
+      onChange={e => setText(e.target.value)}
+    />
+  );
+}
+```
+
+## Challenge 2 of 5: Swap two form fields
+
+This form lets you enter first and last name. It also has a checkbox controlling which field goes first. When you tick the checkbox, the "Last name" field will appear before the "First name" field.
+
+It almost works, but there is a bug. If you fill in the "First name" input and tick the checkbox, the text will stay in the first input (which is now "Last name"). Fix it so that the input text also moves when you reverse the order.
+
+```javascript
+import { useState } from 'react';
+
+export default function App() {
+  const [reverse, setReverse] = useState(false);
+  let checkbox = (
+    <label>
+      <input
+        type="checkbox"
+        checked={reverse}
+        onChange={e => setReverse(e.target.checked)}
+      />
+      Reverse order
+    </label>
+  );
+  if (reverse) {
+    return (
+      <>
+        <Field label="Last name" />
+        <Field label="First name" />
+        {checkbox}
+      </>
+    );
+  } else {
+    return (
+      <>
+        <Field label="First name" />
+        <Field label="Last name" />
+        {checkbox}
+      </>
+    );
+  }
+}
+
+function Field({ label }) {
+  const [text, setText] = useState('');
+  return (
+    <label>
+      {label}:{' '}
+      <input
+        type="text"
+        value={text}
+        placeholder={label}
+        onChange={e => setText(e.target.value)}
+      />
+    </label>
+  );
+}
+```
+
+## Challenge 3 of 5: Reset a detail form
+
+This is an editable contact list. You can edit the selected contact's details and then either press "Save" to update it, or "Reset" to undo your changes.
+
+When you select a different contact (for example, Alice), the state updates but the form keeps showing the previous contact's details. Fix it so that the form gets reset when the selected contact changes.
+
+`EditContact.js`:
+
+```javascript
+import { useState } from 'react';
+
+export default function EditContact({ initialData, onSave }) {
+  const [name, setName] = useState(initialData.name);
+  const [email, setEmail] = useState(initialData.email);
+  return (
+    <section>
+      <label>
+        Name:{' '}
+        <input
+          type="text"
+          value={name}
+          onChange={e => setName(e.target.value)}
+        />
+      </label>
+      <label>
+        Email:{' '}
+        <input
+          type="email"
+          value={email}
+          onChange={e => setEmail(e.target.value)}
+        />
+      </label>
+      <button onClick={() => {
+        const updatedData = {
+          id: initialData.id,
+          name: name,
+          email: email
+        };
+        onSave(updatedData);
+      }}>
+        Save
+      </button>
+      <button onClick={() => {
+        setName(initialData.name);
+        setEmail(initialData.email);
+      }}>
+        Reset
+      </button>
+    </section>
+  );
+}
+```
+
+`ContactList.js`:
+
+```javascript
+export default function ContactList({
+  contacts,
+  selectedId,
+  onSelect
+}) {
+  return (
+    <section>
+      <ul>
+        {contacts.map(contact =>
+          <li key={contact.id}>
+            <button onClick={() => {
+              onSelect(contact.id);
+            }}>
+              {contact.id === selectedId ?
+                <b>{contact.name}</b> :
+                contact.name
+              }
+            </button>
+          </li>
+        )}
+      </ul>
+    </section>
+  );
+}
+```
+
+`App.js`:
+
+```javascript
+import { useState } from 'react';
+import ContactList from './ContactList.js';
+import EditContact from './EditContact.js';
+
+export default function ContactManager() {
+  const [
+    contacts,
+    setContacts
+  ] = useState(initialContacts);
+  const [
+    selectedId,
+    setSelectedId
+  ] = useState(0);
+  const selectedContact = contacts.find(c =>
+    c.id === selectedId
+  );
+
+  function handleSave(updatedData) {
+    const nextContacts = contacts.map(c => {
+      if (c.id === updatedData.id) {
+        return updatedData;
+      } else {
+        return c;
+      }
+    });
+    setContacts(nextContacts);
+  }
+
+  return (
+    <div>
+      <ContactList
+        contacts={contacts}
+        selectedId={selectedId}
+        onSelect={id => setSelectedId(id)}
+      />
+      <hr />
+      <EditContact
+        initialData={selectedContact}
+        onSave={handleSave}
+      />
+    </div>
+  )
+}
+
+const initialContacts = [
+  { id: 0, name: 'Taylor', email: 'taylor@mail.com' },
+  { id: 1, name: 'Alice', email: 'alice@mail.com' },
+  { id: 2, name: 'Bob', email: 'bob@mail.com' }
+];
+```
+
+## Challenge 4 of 5: Clear an image while it's loaded
+
+When you press "Next", the browser starts loading the next image. However, because it's displayed in the same `<img>` tag, by default you would still see the previous image until the next one loads. This may be undesirable if it's important for the text to always match the image. Change it so that the moment you press "Next", the previous image immediately clears.
+
+```javascript
+import { useState } from 'react';
+
+export default function Gallery() {
+  const [index, setIndex] = useState(0);
+  const hasNext = index < images.length - 1;
+
+  function handleClick() {
+    if (hasNext) {
+      setIndex(index + 1);
+    } else {
+      setIndex(0);
+    }
+  }
+
+  let image = images[index];
+  return (
+    <>
+      <button onClick={handleClick}>
+        Next
+      </button>
+      <h3>
+        Image {index + 1} of {images.length}
+      </h3>
+      <img src={image.src} />
+      <p>
+        {image.place}
+      </p>
+    </>
+  );
+}
+
+let images = [{
+  place: 'Penang, Malaysia',
+  src: 'https://i.imgur.com/FJeJR8M.jpg'
+}, {
+  place: 'Lisbon, Portugal',
+  src: 'https://i.imgur.com/dB2LRbj.jpg'
+}, {
+  place: 'Bilbao, Spain',
+  src: 'https://i.imgur.com/z08o2TS.jpg'
+}, {
+  place: 'Valparaíso, Chile',
+  src: 'https://i.imgur.com/Y3utgTi.jpg'
+}, {
+  place: 'Schwyz, Switzerland',
+  src: 'https://i.imgur.com/JBbMpWY.jpg'
+}, {
+  place: 'Prague, Czechia',
+  src: 'https://i.imgur.com/QwUKKmF.jpg'
+}, {
+  place: 'Ljubljana, Slovenia',
+  src: 'https://i.imgur.com/3aIiwfm.jpg'
+}];
+```
+
+## Challenge 5 of 5: Fix misplaced state in the list
+
+In this list, each `Contact` has state that determines whether "Show email" has been pressed for it. Press "show email" for Alice, and then tick the "Show in reverse order" checkbox. You will notice that it's Taylor's email that is expanded now, but Alice's--which has moved to the bottom--appears collapsed.
+
+Fix it so that the expanded state is associated with each contact, regardless of the chosen ordering.
+
+`Contact.js`:
+
+```javascript
+import { useState } from 'react';
+
+export default function Contact({ contact }) {
+  const [expanded, setExpanded] = useState(false);
+  return (
+    <>
+      <p><b>{contact.name}</b></p>
+      {expanded &&
+        <p><i>{contact.email}</i></p>
+      }
+      <button onClick={() => {
+        setExpanded(!expanded);
+      }}>
+        {expanded ? 'Hide' : 'Show'} email
+      </button>
+    </>
+  );
+}
+```
+
+`App.js`:
+
+```javascript
+import { useState } from 'react';
+import Contact from './Contact.js';
+
+export default function ContactList() {
+  const [reverse, setReverse] = useState(false);
+
+  const displayedContacts = [...contacts];
+  if (reverse) {
+    displayedContacts.reverse();
+  }
+
+  return (
+    <>
+      <label>
+        <input
+          type="checkbox"
+          value={reverse}
+          onChange={e => {
+            setReverse(e.target.checked)
+          }}
+        />{' '}
+        Show in reverse order
+      </label>
+      <ul>
+        {displayedContacts.map((contact, i) =>
+          <li key={i}>
+            <Contact contact={contact} />
+          </li>
+        )}
+      </ul>
+    </>
+  );
+}
+
+const contacts = [
+  { id: 0, name: 'Alice', email: 'alice@mail.com' },
+  { id: 1, name: 'Bob', email: 'bob@mail.com' },
+  { id: 2, name: 'Taylor', email: 'taylor@mail.com' }
+];
+```
+
+# Solutions
+
+## Challenge 1 of 5:
+
+The problem is that `Form` is rendered in different positions. In the `if` branch, it is the second child of the `<div>`, but in the `else` branch, it is the first child. Therefore, the component type in each position changes. The first position changes between holding a `p` and a `Form`, while the second position changes between holding a `Form` and a `button`. React resets the state every time the component type changes.
+
+The easiest solution is to unify the branches so that `Form` always renders in the same position:
+
+```javascript
+import { useState } from 'react';
+
+export default function App() {
+  const [showHint, setShowHint] = useState(false);
+  return (
+    <div>
+      {showHint &&
+        <p><i>Hint: Your favorite city?</i></p>
+      }
+      <Form />
+      {showHint ? (
+        <button onClick={() => {
+          setShowHint(false);
+        }}>Hide hint</button>
+      ) : (
+        <button onClick={() => {
+          setShowHint(true);
+        }}>Show hint</button>
+      )}
+    </div>
+  );
+}
+
+function Form() {
+  const [text, setText] = useState('');
+  return (
+    <textarea
+      value={text}
+      onChange={e => setText(e.target.value)}
+    />
+  );
+}
+```
+
+Technically, you could also add `null` before `<Form/>` in the `else` branch to match the `if` branch structure:
+
+```javascript
+import { useState } from 'react';
+
+export default function App() {
+  const [showHint, setShowHint] = useState(false);
+  if (showHint) {
+    return (
+      <div>
+        <p><i>Hint: Your favorite city?</i></p>
+        <Form />
+        <button onClick={() => {
+          setShowHint(false);
+        }}>Hide hint</button>
+      </div>
+    );
+  }
+  return (
+    <div>
+      {null}
+      <Form />
+      <button onClick={() => {
+        setShowHint(true);
+      }}>Show hint</button>
+    </div>
+  );
+}
+
+function Form() {
+  const [text, setText] = useState('');
+  return (
+    <textarea
+      value={text}
+      onChange={e => setText(e.target.value)}
+    />
+  );
+}
+```
+
+This way, `Form` is always the second child, so it stays in the same position and keeps its state. But this approach is much less obvious and introduces a risk that someone else will remove that `null`.
+
+## Challenge 2 of 5:
+
+Give a `key` to both `<Field>` components in both `if` and `else` branches. This tells React how to "match up" the correct state for either `<Field>` even if their order within the parent changes:
+
+```javascript
+import { useState } from 'react';
+
+export default function App() {
+  const [reverse, setReverse] = useState(false);
+  let checkbox = (
+    <label>
+      <input
+        type="checkbox"
+        checked={reverse}
+        onChange={e => setReverse(e.target.checked)}
+      />
+      Reverse order
+    </label>
+  );
+  if (reverse) {
+    return (
+      <>
+        <Field key="lastName" label="Last name" /> 
+        <Field key="firstName" label="First name" />
+        {checkbox}
+      </>
+    );
+  } else {
+    return (
+      <>
+        <Field key="firstName" label="First name" /> 
+        <Field key="lastName" label="Last name" />
+        {checkbox}
+      </>
+    );    
+  }
+}
+
+function Field({ label }) {
+  const [text, setText] = useState('');
+  return (
+    <label>
+      {label}:{' '}
+      <input
+        type="text"
+        value={text}
+        placeholder={label}
+        onChange={e => setText(e.target.value)}
+      />
+    </label>
+  );
+}
+```
+
+## Challenge 3 of 5:
+
+Give `key={selectedId}` to the `EditContact` component. This way, switching between different contacts will reset the form:
+
+```javascript
+import { useState } from 'react';
+import ContactList from './ContactList.js';
+import EditContact from './EditContact.js';
+
+export default function ContactManager() {
+  const [
+    contacts,
+    setContacts
+  ] = useState(initialContacts);
+  const [
+    selectedId,
+    setSelectedId
+  ] = useState(0);
+  const selectedContact = contacts.find(c =>
+    c.id === selectedId
+  );
+
+  function handleSave(updatedData) {
+    const nextContacts = contacts.map(c => {
+      if (c.id === updatedData.id) {
+        return updatedData;
+      } else {
+        return c;
+      }
+    });
+    setContacts(nextContacts);
+  }
+
+  return (
+    <div>
+      <ContactList
+        contacts={contacts}
+        selectedId={selectedId}
+        onSelect={id => setSelectedId(id)}
+      />
+      <hr />
+      <EditContact
+        key={selectedId}
+        initialData={selectedContact}
+        onSave={handleSave}
+      />
+    </div>
+  )
+}
+
+const initialContacts = [
+  { id: 0, name: 'Taylor', email: 'taylor@mail.com' },
+  { id: 1, name: 'Alice', email: 'alice@mail.com' },
+  { id: 2, name: 'Bob', email: 'bob@mail.com' }
+];
+```
+
+## Challenge 4 of 5:
+
+You can provide a `key` to the `<img>` tag. When that `key` changes, React will re-create the `<img>` DOM node from scratch. This causes a brief flash when each image loads, so it's not something you'd want to do for every image in your app. But it makes sense if you want to ensure the image always matches the text.
+
+```javascript
+import { useState } from 'react';
+
+export default function Gallery() {
+  const [index, setIndex] = useState(0);
+  const hasNext = index < images.length - 1;
+
+  function handleClick() {
+    if (hasNext) {
+      setIndex(index + 1);
+    } else {
+      setIndex(0);
+    }
+  }
+
+  let image = images[index];
+  return (
+    <>
+      <button onClick={handleClick}>
+        Next
+      </button>
+      <h3>
+        Image {index + 1} of {images.length}
+      </h3>
+      <img key={image.src} src={image.src} />
+      <p>
+        {image.place}
+      </p>
+    </>
+  );
+}
+
+let images = [{
+  place: 'Penang, Malaysia',
+  src: 'https://i.imgur.com/FJeJR8M.jpg'
+}, {
+  place: 'Lisbon, Portugal',
+  src: 'https://i.imgur.com/dB2LRbj.jpg'
+}, {
+  place: 'Bilbao, Spain',
+  src: 'https://i.imgur.com/z08o2TS.jpg'
+}, {
+  place: 'Valparaíso, Chile',
+  src: 'https://i.imgur.com/Y3utgTi.jpg'
+}, {
+  place: 'Schwyz, Switzerland',
+  src: 'https://i.imgur.com/JBbMpWY.jpg'
+}, {
+  place: 'Prague, Czechia',
+  src: 'https://i.imgur.com/QwUKKmF.jpg'
+}, {
+  place: 'Ljubljana, Slovenia',
+  src: 'https://i.imgur.com/3aIiwfm.jpg'
+}];
+```
+
+## Challenge 5 of 5:
+
+
+
+```javascript
+
+```
