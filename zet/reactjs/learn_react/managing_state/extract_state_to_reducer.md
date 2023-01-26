@@ -591,4 +591,614 @@ We recommend using a reducer if you often encounter bugs due to incorrect state 
 
 Keep these two tips in mind when writing reducers:
 
+* `Reducers must be pure`. Similar to state updater functions, reducers run during rendering! (Actions are queued until the nest render.) This means that reducers must be pure--same inputs always result in the same output. They should not send requests, schedule timeouts, or perform any side effects (operations that impact things outside the component). They should update objects and arrays without mutations.
+* `Each action describes a single user interaction, even if that leads to multiple changes in the data`. For example, if a user presses "Reset" on a form with five fields managed by a reducer, it makes more sense to dispatch one `reset_form` action rather than five separate `set_field` actions. If you log every action in a reducer, that log should be clear enough for you to reconstruct what interactions or responses happened in what order. This helps with debugging!
 
+## Writing concise reducers with Immer
+
+Just like with updating objects with arrays in regular state, you can use the Immer library to make reducers more concise. Here, `useImmerReducer` lets you mutate the state with `push` or `arr[i] = ` assignment:
+
+```javascript
+import {useImmerReducer} from 'use-immer';
+import AddTask from './AddTask.js';
+import TaskList from './TaskList.js';
+
+function tasksReducer(draft, action) {
+  switch (action.type) {
+    case 'added': {
+      draft.push({
+        id: action.id,
+        text: action.text,
+        done: false,
+      });
+    case 'changed': {
+      const index = draft.findIndex((t) => t.id === action.task.id):
+      draft[index] = action.task;
+      break;
+    }
+    case 'deleted': {
+      return draft.filter((t) => t.id !== action.id);
+    }
+    default: {
+      throw Error('Unknown actions: ' + action.type);
+    }
+  }
+}
+
+export default function TaskApp() {
+  const [tasks, dispatch] = useImmerReducer(tasksReducer, initialTasks);
+
+  function handleAddTask(text) {
+    dispatch({
+      type: 'added',
+      id: nextId++,
+      text: text,
+    });
+  }
+
+  function handleChangeTast(task) {
+    dispatch({
+      type: 'changed',
+      task: task,
+    });
+  }
+
+  function handleDeleteTask(taskId) {
+    dispatch({
+      type: 'deleted',
+      id: taskId,
+    });
+  }
+
+  return (
+    <>
+      <h1>Prague itinerary</h1>
+      <AddTask onAddTask={handleAddTask} />
+      <TaskList
+        tasks={tasks}
+        onChangeTask={handleChangeTask}
+        onDeleteTask={handleDeleteTask}
+      />
+    </>
+  );
+}
+
+let nextId = 3;
+const initialTasks = [
+  {id: 0, text: 'Visit Kafka Museum', done: true},
+  {id: 1, text: 'Watch a puppet show', done: false},
+  {id: 2, text: 'Lennon Wall pic', done: false},
+];
+```
+
+Reducers must be pure, so they shouldn't mutate state. But Immer provides you with a special `draft` object which is safe to mutate. Under the hood, Immer will create a copy of your state with the changes you made to the `draft`. This is why reducers managed by `useImmerReducer` can mutate their first argument and don't need to return state.
+
+## Recap
+
+* To convert from `useState` to `useReducer`:
+  1. Dispatch actions from event handlers
+  2. Write a reducer function that returns the next state for a given state and action
+  3. Replace `useState` with `useReducer`
+* Reducers require you to write a bit more code, but they help with debugging and testing.
+* Reducers must be pure.
+* Each action describes a single user interaction.
+* Use Immer if you want to write reducers in a mutating style.
+
+# Challenges
+
+## Challenge 1 of 4: Dispatch actions from event handlers
+
+Currently, the event handlers in `ContactList.js` and `Chat.js` have `// TODO` comments. This is why typing into the input doesn't work, and clicking on the buttons doesn't change the select recipient.
+
+Replace these two `// TODO`s with the code to `dispatch` the corresponding actions. To see the expect shape and the type of the actions, check the reducer in `messengerReducer.js`. The reducer is already written so you won't need to change it. You only need to dispatch the actions in `ContactList.js` and `Chat.js`.
+
+```javascript
+import {useReducer} from 'react';
+import Chat from './Chat.js';
+import ContactList from './ContactList.js';
+import {initialState, messengerReducer} from './messengerReducer';
+
+export default function Messenger() {
+  const [state, dispatch] = useReducer(messengerReducer, initialState);
+  const message = state.message;
+  const contact = contacts.find((c) => c.id === state.selectedId);
+  return (
+    <div>
+      <ContactList
+        contacts={contacts}
+        selectedId={state.selectedId}
+        dispatch={dispatch}
+      />
+      <Chat
+        key={contact.id}
+        message={message}
+        contact={contact}
+        dispatch={dispatch}
+      />
+    </div>
+  );
+}
+
+const contacts = [
+  {id: 0, name: 'Taylor', email: 'taylor@mail.com'},
+  {id: 1, name: 'Alice', email: 'alice@mail.com'},
+  {id: 2, name: 'Bob', email: 'bob@mail.com'},
+];
+```
+
+## Challenge 2 of 4: Clear the input of sending a message
+
+Currently, pressing "Send" doesn't do anything. Add an event handler to the "Send" button that will:
+
+1. Show an `alert` with the recipient's email and the message.
+2. Clear the message input.
+
+```javascript
+import {useState} from 'react';
+
+export default function Chat({contact, message, dispatch}) {
+  return (
+    <section className="chat">
+      <textarea
+        value={message}
+        placeholder={'Chat to ' + contact.name}
+        onChange={(e) => {
+          dispatch({
+            type: 'edited_message',
+            message: e.target.value,
+          });
+        }}
+      />
+      <br />
+      <button>Send to {contact.email}</button>
+    </section>
+  );
+}
+```
+
+## Challenge 3 of 4: Restore input values when switching between tabs
+
+In this example, switching between different recipients always clears the text input:
+
+```javascript
+case 'changed_selection': {
+  return {
+    ...state,
+    selectedId: action.contactId,
+    message: '' // Clears the input
+  };
+```
+
+This is because you don't want to share a single message draft between several recipients. But it would be better if your app "remembered" a draft for each contact separately, restoring them when you switch contacts.
+
+Your task is to change the way the state is structured so that you remember a separate message draft per contact. You would need to make a few changes to the reducer, the initial state, and the components. 
+
+```javascript
+import {useReducer} from 'react';
+import Chat from './Chat.js';
+import ContactList from './ContactList.js';
+import {initialState, messengerReducer} from './messengerReducer';
+
+export default function Messenger() {
+  const [state, dispatch] = useReducer(messengerReducer, initialState);
+  const message = state.message;
+  const contact = contacts.find((c) => c.id === state.selectedId);
+  return (
+    <div>
+      <ContactList
+        contacts={contacts}
+        selectedId={state.selectedId}
+        dispatch={dispatch}
+      />
+      <Chat
+        key={contact.id}
+        message={message}
+        contact={contact}
+        dispatch={dispatch}
+      />
+    </div>
+  );
+}
+
+const contacts = [
+  {id: 0, name: 'Taylor', email: 'taylor@mail.com'},
+  {id: 1, name: 'Alice', email: 'alice@mail.com'},
+  {id: 2, name: 'Bob', email: 'bob@mail.com'},
+];
+```
+
+## Challenge 4 of 4: Implement `useReducer` from scratch
+
+In the earlier examples, you imported the `useReducer` Hook from React. This time, you will implement the `useReducer` Hook itself! Here is a stub to get you started. It shouldn't take more than 10 lines of code.
+
+To text your changes, try typing into the input or select a contact.
+
+`MyReact.js`:
+
+```javascript
+import {useState} from 'react';
+
+export function useReducer(reducer, initialState) {
+  const [state, setState] = useState(initialState);
+
+  // ???
+
+  return [state, dispatch];
+}
+```
+
+`messengerReducer.js`:
+
+```javascript
+export const initialState = {
+  selectedId: 0,
+  messages: {
+    0: 'Hello, Taylor',
+    1: 'Hello, Alice',
+    2: 'Hello, Bob',
+  },
+};
+
+export function messengerReducer(state, action) {
+  switch (action.type) {
+    case 'changed_selection': {
+      return {
+        ...state,
+        selectedId: action.contactId,
+      };
+    }
+    case 'edited_message': {
+      return {
+        ...state,
+        messages: {
+          ...state.messages,
+          [state.selectedId]: action.message,
+        },
+      };
+    }
+    case 'sent_message': {
+      return {
+        ...state,
+        messages: {
+          ...state.messages,
+          [state.selectedId]: '',
+        },
+      };
+    }
+    default: {
+      throw Error('Unknown action: ' + action.type);
+    }
+  }
+}
+```
+
+`App.js`:
+
+```javascript
+import {useReducer} from './MyReact.js';
+import Chat from './Chat.js';
+import ContactList from './ContactList.js';
+import {initialState, messengerReducer} from './messengerReducer';
+
+export default function Messenger() {
+  const [state, dispatch] = useReducer(messengerReducer, initialState);
+  const message = state.messages[state.selectedId];
+  const contact = contacts.find((c) => c.id === state.selectedId);
+  return (
+    <div>
+      <ContactList
+        contacts={contacts}
+        selectedId={state.selectedId}
+        dispatch={dispatch}
+      />
+      <Chat
+        key={contact.id}
+        message={message}
+        contact={contact}
+        dispatch={dispatch}
+      />
+    </div>
+  );
+}
+
+const contacts = [
+  {id: 0, name: 'Taylor', email: 'taylor@mail.com'},
+  {id: 1, name: 'Alice', email: 'alice@mail.com'},
+  {id: 2, name: 'Bob', email: 'bob@mail.com'},
+];
+```
+
+# Solutions
+
+## Challenge 1 of 4:
+
+From the reducer code, you can infer that actions need to look like this:
+
+```javascript
+// When the user presses "Alice"
+dispatch({
+  type: 'changed_selection',
+  contactId: 1,
+});
+
+// When user types "Hello!"
+dispatch({
+  type: 'edited_message',
+  message: 'Hello!',
+});
+```
+
+Here is the example updated to dispatch the corresponding messages:
+
+```javascript
+import {useState} from 'react';
+
+export default function Chat({contact, message, dispatch}) {
+  return (
+    <section className="chat">
+      <textarea
+        value={message}
+        placeholder={'Chat to ' + contact.name}
+        onChange={(e) => {
+          dispatch({
+            type: 'edited_message',
+            message: e.target.value,
+          });
+        }}
+      />
+      <br />
+      <button>Send to {contact.email}</button>
+    </section>
+  );
+}
+```
+
+```javascript
+export default function ContactList({contacts, selectedId, dispatch}) {
+  return (
+    <section className="contact-list">
+      <ul>
+        {contacts.map((contact) => (
+          <li key={contact.id}>
+            <button
+              onClick={() => {
+                dispatch({
+                  type: 'changed_selection',
+                  contactId: contact.id,
+                });
+              }}>
+              {selectedId === contact.id ? <b>{contact.name}</b> : contact.name}
+            </button>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+```
+
+## Challenge 2 of 4:
+
+There are a couple of ways you could do it in the "Send" button event handler. One approach is to show an alert and then dispatch an `edited_message` action with an empty `message`:
+
+```javascript
+import {useState} from 'react';
+
+export default function Chat({contact, message, dispatch}) {
+  return (
+    <section className="chat">
+      <textarea
+        value={message}
+        placeholder={'Chat to ' + contact.name}
+        onChange={(e) => {
+          dispatch({
+            type: 'edited_message',
+            message: e.target.value,
+          });
+        }}
+      />
+      <br />
+      <button
+        onClick={() => {
+          alert(`Sending "${message}" to ${contact.email}`);
+          dispatch({
+            type: 'edited_message',
+            message: '',
+          });
+        }}>
+        Send to {contact.email}
+      </button>
+    </section>
+  );
+}
+```
+
+This works and clears the input when you hit "Send".
+
+However, from the user's perspective, sending a message is a different action than editing the field. To reflect that, you could instead create a new action called `sent_message`, and handle it separately in the reducer:
+
+```javascript
+import {useState} from 'react';
+
+export default function Chat({contact, message, dispatch}) {
+  return (
+    <section className="chat">
+      <textarea
+        value={message}
+        placeholder={'Chat to ' + contact.name}
+        onChange={(e) => {
+          dispatch({
+            type: 'edited_message',
+            message: e.target.value,
+          });
+        }}
+      />
+      <br />
+      <button
+        onClick={() => {
+          alert(`Sending "${message}" to ${contact.email}`);
+          dispatch({
+            type: 'sent_message',
+          });
+        }}>
+        Send to {contact.email}
+      </button>
+    </section>
+  );
+}
+```
+
+```javascript
+export const initialState = {
+  selectedId: 0,
+  message: 'Hello',
+};
+
+export function messengerReducer(state, action) {
+  switch (action.type) {
+    case 'changed_selection': {
+      return {
+        ...state,
+        selectedId: action.contactId,
+        message: '',
+      };
+    }
+    case 'edited_message': {
+      return {
+        ...state,
+        message: action.message,
+      };
+    }
+    case 'sent_message': {
+      return {
+        ...state,
+        message: '',
+      };
+    }
+    default: {
+      throw Error('Unknown action: ' + action.type);
+    }
+  }
+}
+```
+
+The resulting behavior is the same. But keep in mid that action types should ideally describe "what the user did" rather than "how you want the state to change". This makes it easier to later add more features.
+
+With either solution, it's important that you don't place the `alert` inside a reducer. The reducer should be a pure function--it should only calculate the next state. It should not "do" anything, including displaying messages to the use. That should happen in the event handler. (To help catch mistakes like this, React will call your reducers multiple times in Strict Mode. This is why, if you put an alert in a reducer, it fires twice.)
+
+## Challenge 3 of 4:
+
+You'll need to update the reducer to store and update a separate message draft per contact:
+
+```javascript
+// When the input is edited
+case 'edited_message': {
+  return {
+    // Keep other state like selection
+    ...state,
+    messages: {
+      // Keep messages for other contacts
+      ...state.messages,
+      // But change the selected contact's message
+      [state.selectedId]: action.message
+    }
+  };
+}
+```
+
+You would also update the `Messenger` component to read the message for the currently selected contact:
+
+```javascript
+const message = state.messages[state.selectedId];
+```
+
+Here is the complete solution:
+
+`App.js`:
+
+```javascript
+import {useReducer} from 'react';
+import Chat from './Chat.js';
+import ContactList from './ContactList.js';
+import {initialState, messengerReducer} from './messengerReducer';
+
+export default function Messenger() {
+  const [state, dispatch] = useReducer(messengerReducer, initialState);
+  const message = state.messages[state.selectedId];
+  const contact = contacts.find((c) => c.id === state.selectedId);
+  return (
+    <div>
+      <ContactList
+        contacts={contacts}
+        selectedId={state.selectedId}
+        dispatch={dispatch}
+      />
+      <Chat
+        key={contact.id}
+        message={message}
+        contact={contact}
+        dispatch={dispatch}
+      />
+    </div>
+  );
+}
+
+const contacts = [
+  {id: 0, name: 'Taylor', email: 'taylor@mail.com'},
+  {id: 1, name: 'Alice', email: 'alice@mail.com'},
+  {id: 2, name: 'Bob', email: 'bob@mail.com'},
+];
+```
+
+`messengerReducer.js`:
+
+```javascript
+export const initialState = {
+  selectedId: 0,
+  messages: {
+    0: 'Hello, Taylor',
+    1: 'Hello, Alice',
+    2: 'Hello, Bob',
+  },
+};
+
+export function messengerReducer(state, action) {
+  switch (action.type) {
+    case 'changed_selection': {
+      return {
+        ...state,
+        selectedId: action.contactId,
+      };
+    }
+    case 'edited_message': {
+      return {
+        ...state,
+        messages: {
+          ...state.messages,
+          [state.selectedId]: action.message,
+        },
+      };
+    }
+    case 'sent_message': {
+      return {
+        ...state,
+        messages: {
+          ...state.messages,
+          [state.selectedId]: '',
+        },
+      };
+    }
+    default: {
+      throw Error('Unknown action: ' + action.type);
+    }
+  }
+}
+```
+
+Notably, you didn't need to change any of the event handlers to implement this different behavior. Without a reducer, you would have to change every event handler that updates the state.
+
+## Challenge 4 of 4:
+
+```javascript
+
+```
