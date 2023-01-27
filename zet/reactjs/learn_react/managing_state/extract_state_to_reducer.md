@@ -1199,6 +1199,28 @@ Notably, you didn't need to change any of the event handlers to implement this d
 
 ## Challenge 4 of 4:
 
-```javascript
+Dispatching an action calls a reducer with the current state and the action, and store the result as the next state. This is what is look like in code:
 
+```javascript
+import {useState} from 'react';
+
+export function useReducer(reducer, initialState) {
+  const [state, setState] = useState(initialState);
+
+  function dispatch(action) {
+    const nextState = reducer(state, action);
+    setState(nextState);
+  }
+  return [state, dispatch];
+}
 ```
+
+Though it doesn't matter in most cases, a slightly more accurate implementation looks like this:
+
+```javascript
+function dispatch(action) {
+  setState((s) => reducer(s, action));
+}
+```
+
+This is because the dispatched actions are queued until the next render, similar to the updater functions.
