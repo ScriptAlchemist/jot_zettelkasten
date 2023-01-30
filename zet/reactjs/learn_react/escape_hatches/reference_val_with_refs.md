@@ -248,4 +248,337 @@ Typically, you will use a ref when your component needs to "step outside" React 
 * Storing and manipulation DOM elements, which we cover on the next page.
 * Storing other objects that aren't necessary to calculate the JSX.
 
+If your component needs to store some value, but it doesn't impact the rendering logic, choose refs.
+
+### Best practices for refs
+
+Following these principles will make your components more predictable:
+
+* `Treat refs as an escape hatch`. Refs are useful when you work with external systems or browser APIs. If much of your application logic and data flow relies on refs, you might want to rethink your approach.
+* `Don't read or write 'ref.current' during rendering`. If some information is needed during rendering, use `state` instead. Since React doesn't know when `ref.current` changes, even reading it while rendering makes your component's behaviour difficult to predict. (The only exception to this is code like `if (!ref.current) ref.current = new Things()` which only sets the ref once during the first render.)
+
+Limitations of React state don't apply to refs. For example, state acts like a snapshot for every render and doesn't update synchronously. But when you mutate the current value of a ref, it changes immediately:
+
+```javascript
+ref.current = 5;
+console.log(ref.current); // 5
+```
+
+This is because the ref itself is a regular JavaScript object, and so it behaves like one.
+
+You also don't need to worry about avoiding mutation when you work with a ref. As long as the object you're mutating isn't used for rendering, React doesn't care what you do with the ref or its contents.
+
+## Refs and the DOM
+
+You can point a ref to any value. However, the most common use case for a ref is to access a DOM element. For example, this is handy if you want to focus an input programmatically. When you pass a ref to a `ref` attribute in JSX, like `<div ref={myRef}>`, React will put the corresponding DOM element into `myRef.current`. You can read more about this in Manipulating the DOM with Refs.
+
+## Recap
+
+* Refs are an escape hatch to hold onto values that aren't used for rendering. You wont' need them often.
+* a ref is a plain JavaScript object with a single property called `current`, which you can read or set.
+* You can ask React to give you a ref by calling the `useRef` Hook.
+* Like state, refs let you retain information between re-renders of a component.
+* Unlike state, setting the ref's `current` value does not trigger a re-render.
+* Don't read or write `ref.current` during rendering. This makes your component hard to predict.
+
+# Challenges
+
+## Challenge 1 of 4: Fix a broken chat input
+
+Type a message and click "Send". You will notice there is a three second delay before you see the "Sent!" alert. During this delay, you can see an "Undo" button. Click it. This "Undo" button is supposed to stop the "Sent!" message from appearing. It does this by calling `clearTimeout` for the timeout ID saved during `handleSend`. However, even after "Undo" is clicked, the "Sent!" message still appears. Find why it doesn't work, and fix it.
+
+```javascript
+import { useState } from 'react';
+
+export default function Chat() {
+  const [text, setText] = useState('');
+  const [isSending, setIsSending] = useState(false);
+  let timeoutID = null;
+
+  function handleSend() {
+    setIsSending(true);
+    timeoutID = setTimeout(() => {
+      alert('Sent!');
+      setIsSending(false);
+    }, 3000);
+  }
+
+  function handleUndo() {
+    setIsSending(false);
+    clearTimeout(timeoutID);
+  }
+
+  return (
+    <>
+      <input
+        disabled={isSending}
+        value={text}
+        onChange={e => setText(e.target.value)}
+      />
+      <button
+        disabled={isSending}
+        onClick={handleSend}>
+        {isSending ? 'Sending...' : 'Send'}
+      </button>
+      {isSending &&
+        <button onClick={handleUndo}>
+          Undo
+        </button>
+      }
+    </>
+  );
+}
+```
+
+## Challenge 2 of 4: Fix a component failing to re-render
+
+This button is supposed to toggle between showing "On" and "Off". However, it always shows "Off." What is wrong with this code? Fix it.
+
+```javascript
+import { useRef } from 'react';
+
+export default function Toggle() {
+  const isOnRef = useRef(false);
+
+  return (
+    <button onClick={() => {
+      isOnRef.current = !isOnRef.current;
+    }}>
+      {isOnRef.current ? 'On' : 'Off'}
+    </button>
+  );
+}
+```
+
+## Challenge 3 of 4: Fix debouncing
+
+In this example, all button click handlers are "debounced". To see what this means, press one of the buttons. Notice how the message appears a second later. If you press the button while waiting for the message, the timer will reset. So if you keep clicking the same button fast many times, the message won't appear until a second after you stop clicking. Debouncing lets you delay some action until the user "stops doing things".
+
+This example works, but not quite as intended. The buttons are not independent. To see the problem, click on of the buttons, and then immediately click another button. You'd expect that after a delay, you would see both button's messages. But only the last button's message shows up. The first button's message gets lost.
+
+Why are the buttons interfering with each other? Find and fix the issue.
+
+```javascript
+import { useState } from 'react';
+
+let timeoutID;
+
+function DebouncedButton({ onClick, children }) {
+  return (
+    <button onClick={() => {
+      clearTimeout(timeoutID);
+      timeoutID = setTimeout(() => {
+        onClick();
+      }, 1000);
+    }}>
+      {children}
+    </button>
+  );
+}
+
+export default function Dashboard() {
+  return (
+    <>
+      <DebouncedButton
+        onClick={() => alert('Spaceship launched!')}
+      >
+        Launch the spaceship
+      </DebouncedButton>
+      <DebouncedButton
+        onClick={() => alert('Soup boiled!')}
+      >
+        Boil the soup
+      </DebouncedButton>
+      <DebouncedButton
+        onClick={() => alert('Lullaby sung!')}
+      >
+        Sing a lullaby
+      </DebouncedButton>
+    </>
+  )
+}
+```
+
+## Challenge 4 of 4: Read the latest state
+
+In this example, after you press "Send", there is a small delay before the message is shown. Type "hello", press Send, and then quickly edit the input again. Despite your edits, the alert would still show "hello" (which was the value of state at the time the button was clicked).
+
+Usually, this behaviour is what you want in an app. However, there may be occasional cases where you want some asynchronous code to read the latest version of some state. Can you think of a way to make the alert show the current input text rather than what it was at the time of the click?
+
+```javascript
+import { useState, useRef } from 'react';
+
+export default function Chat() {
+  const [text, setText] = useState('');
+
+  function handleSend() {
+    setTimeout(() => {
+      alert('Sending: ' + text);
+    }, 3000);
+  }
+
+  return (
+    <>
+      <input
+        value={text}
+        onChange={e => setText(e.target.value)}
+      />
+      <button
+        onClick={handleSend}>
+        Send
+      </button>
+    </>
+  );
+}
+```
+
+# Solutions
+
+## Challenge 1 of 4:
+
+Whenever your component re-renders (such as when you set state), all local variables get initialized form scratch. This is why you can't save the timeout ID in a local variable like `timeoutID` and then expect another event handler to "see" it in the future. Instead, store it in a ref, which React will preserve between renders.
+
+```javascript
+import { useState, useRef } from 'react';
+
+export default function Chat() {
+  const [text, setText] = useState('');
+  const [isSending, setIsSending] = useState(false);
+  const timeoutRef = useRef(null);
+
+  function handleSend() {
+    setIsSending(true);
+    timeoutRef.current = setTimeout(() => {
+      alert('Sent!');
+      setIsSending(false);
+    }, 3000);
+  }
+
+  function handleUndo() {
+    setIsSending(false);
+    clearTimeout(timeoutRef.current);
+  }
+
+  return (
+    <>
+      <input
+        disabled={isSending}
+        value={text}
+        onChange={e => setText(e.target.value)}
+      />
+      <button
+        disabled={isSending}
+        onClick={handleSend}>
+        {isSending ? 'Sending...' : 'Send'}
+      </button>
+      {isSending &&
+        <button onClick={handleUndo}>
+          Undo
+        </button>
+      }
+    </>
+  );
+}
+```
+
+## Challenge 2 of 4:
+
+In this example, the current value of a ref is used to calculate the rendering output: `{isOnRef.current ? 'On' : 'Off'}`. This is a sign that this information should not be in a ref, and should have instead bee put in state. To fix it, remove the ref and use state instead:
+
+```javascript
+import { useState } from 'react';
+
+export default function Toggle() {
+  const [isOn, setIsOn] = useState(false);
+
+  return (
+    <button onClick={() => {
+      setIsOn(!isOn);
+    }}>
+      {isOn ? 'On' : 'Off'}
+    </button>
+  );
+}
+```
+
+## Challenge 3 of 4:
+
+A variable like `timeoutId` is shared between all components. This is why clicking on the second button resets the first button's pending timeout. To fix this, you can keep timeout in a ref. Each button will get its own ref, so they won't conflict with each other. Notice how clicking two buttons fast will show both messages.
+
+```javascript
+import { useState, useRef } from 'react';
+
+function DebouncedButton({ onClick, children }) {
+  const timeoutRef = useRef(null);
+  return (
+    <button onClick={() => {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = setTimeout(() => {
+        onClick();
+      }, 1000);
+    }}>
+      {children}
+    </button>
+  );
+}
+
+export default function Dashboard() {
+  return (
+    <>
+      <DebouncedButton
+        onClick={() => alert('Spaceship launched!')}
+      >
+        Launch the spaceship
+      </DebouncedButton>
+      <DebouncedButton
+        onClick={() => alert('Soup boiled!')}
+      >
+        Boil the soup
+      </DebouncedButton>
+      <DebouncedButton
+        onClick={() => alert('Lullaby sung!')}
+      >
+        Sing a lullaby
+      </DebouncedButton>
+    </>
+  )
+}
+```
+
+## Challenge 4 of 4:
+
+State works like a snapshot, so you can't read the latest state from an asynchronous operation like a timeout. However, you can keep the latest input text in a ref. A ref is mutable, so you can read the `current` property at any time. Since the current text is also used for rendering, in this example, you will need both a state variable (for rendering), and a ref (to read it in the timeout). You will need to update the current ref value manually.
+
+```javascript
+import { useState, useRef } from 'react';
+
+export default function Chat() {
+  const [text, setText] = useState('');
+  const textRef = useRef(text);
+
+  function handleChange(e) {
+    setText(e.target.value);
+    textRef.current = e.target.value;
+  }
+
+  function handleSend() {
+    setTimeout(() => {
+      alert('Sending: ' + textRef.current);
+    }, 3000);
+  }
+
+  return (
+    <>
+      <input
+        value={text}
+        onChange={handleChange}
+      />
+      <button
+        onClick={handleSend}>
+        Send
+      </button>
+    </>
+  );
+}
+```
 
