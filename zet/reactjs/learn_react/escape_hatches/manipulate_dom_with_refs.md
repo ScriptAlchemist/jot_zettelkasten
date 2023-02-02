@@ -482,3 +482,8 @@ setTodos([...todos, newTodo]);
 listRef.current.lastChild.scrollIntoView();
 ```
 
+> In React, state updates are queued. Usually, this is what you want.
+> However, here is causes a problem because `setTodos` does not
+> immediately update the DOM. So the time you scroll the list to its
+> last element, the todo has not yet been added. This is why scrolling
+> always "lags behind" by one item.

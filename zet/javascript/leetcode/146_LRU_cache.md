@@ -95,6 +95,43 @@ LRUCache.prototype.get = function(key) {
 
 In the get function you first search if the key exists. If it doesn't you return `-1`. If it does. We save the value in a variable. Then we delete the key from the hashmap. After it is deleted. We re-add the key/value pair. We delete and re-add to keep track of the least recently used.
 
+The full solution:
+
+```javascript
+/**
+ * @param {number} capacity
+ */
+const LRUCache = function(capacity) {
+    this.capacity = capacity;
+    this.cache = new Map();
+};
+
+/**
+ * @param {number} key
+ * @param {number} value
+ * @return {void}
+ */
+LRUCache.prototype.put = function(key, value) {
+    if (this.cache.has(key)) this.cache.delete(key);
+    this.cache.set(key, value);
+    if (this.cache.size > this.capacity) {
+      this.cache.delete(this.cache.keys().next().value);
+    }
+};
+
+/**
+ * @param {number} key
+ * @return {number}
+ */
+LRUCache.prototype.get = function(key) {
+    if (!this.cache.has(key)) return -1;
+    const value = this.cache.get(key);
+    this.cache.delete(key);
+    this.cache.set(key, value);
+    return value;
+};
+```
+
 This answer works but it isn't the only answer. There is a solution where we use a double linked list to solve this. We can try to explain it below.
 
 
