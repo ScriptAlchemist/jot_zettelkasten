@@ -491,3 +491,482 @@ listRef.current.lastChild.scrollIntoView();
 > To fix this issue, you can force React to update ("flush") the DOM
 > synchronously. To do this, import `flushSync` from `react-dom` and wrap
 > the state update into `flushSync` call:
+
+```javascript
+flushSync(() => {
+  setTodos([ ...todos, newTodo]);
+});
+listRef.current.lastChild.scrollIntoView();
+```
+
+> This will instruct React to update the DOM synchronously right after
+> the code wrapped in `flushSync` executes. As a result, the last todo
+> will already be in the DOM by the time you try to scroll to it:
+
+```javascript
+import  useState, useRef } from 'react';
+import { flusSync } from 'react-dom';
+
+export default funciton TodoList() {
+  const listRef = useRef(null);
+  const [text, setText] = useState('');
+  const [todos, setTodods] = useState(initialTodos);
+
+  function handleAdd() {
+    const newTodo = { id: nextId++, text: text };
+    flushSync(() => {
+      setText('');
+      setTodos([ ...todos, newTodo]);
+    });
+    listRef.current.lstChild.scrollIntiView({
+      behavior: 'smooth',
+      block: 'nearest'
+    });
+  }
+
+  return (
+    <>
+      <button onClick={handleAdd}>
+        Add
+      </button>
+      <input
+        value={text}
+        onChange={e => setText(e.target.value)}
+      />
+      <ul ref={listRef}>
+        {todos.map(todo => (
+          <li key={todo.id}>{todo.text}</li>
+        ))}
+      </ul>
+    </>
+  );
+}
+
+let nextId = 0;
+let initialTodos = [];
+for (let i = 0; i < 20; i++) {
+  initialTodos.push({
+    id: nextId++,
+    text: 'Todo #' + (i + 1)
+  });
+}
+```
+
+## Best practices for DOM manipulation with Refs
+
+Refs are an escape hatch. You should only use them when you have to "step outside React". Common examples of this include managing focus, scroll position, or calling browser APIs that React does not expose.
+
+If you stick to non-destructive actions like focusing and scrolling, you shouldn't encounter any problems. However, if you try to modify the DOM manually, you can risk conflicting with the changes React is making.
+
+To illustrate this problem, this example includes a welcome message and two buttons. The first button toggles its presence using `conditional rendering` and `state`,as you would usually do in React. The second button uses the `remove()` DOM API forcefully remove it from the DOM outside of React's control
+
+Try pressing "Toggle with `setState`" a few times. The message should disappear and appear again. Then press "remove from the DOM". This will forcefully remove it. Finally, press "Toggle with `setState`":
+
+```javascript
+import {useState, useRef} from 'react';
+
+export default function Counter() {
+  const [show, setShow] = useState(true);
+  const ref = useRef(null);
+
+  return (
+    <div>
+      <button
+        onClick={() => {
+          setShow(!show);
+        }}>
+        Toggle with setState
+      </button>
+      <button
+        onClick={() => {
+          ref.current.remove();
+        }}>
+        Remove from the DOM
+      </button>
+      {show && <p ref={ref}>Hello World</p>}
+    </div>
+  );
+}
+```
+
+After you've manually removed the DOM element, trying to use `setState` to show it again will lead to a crash. This is because you've changed the DOM, and React doesn't know how to continue managing it correctly.
+
+Avoid changing DOM nodes managed by React. Modifying, adding children to, or removing children from elements that are managed by React can lead to inconsistent visual results or crashes like above.
+
+However, this doesn't mean that you can't do it at all. It requires caution. You can safely modify parts of the DOM that React has no reason to update. For example, if some `<div>` is always empty in the JSX, React won't have a reason to touch its children list. Therefore, it is safe to manually add or remove elements there.
+
+## Recap
+
+* Refs are a generic concept, but most often you'll use them to hold DOM elements.
+* You instruct React to put a DOM node into `myRef.current` by passing `<div ref={myRef}>`.
+* Usually, you will use refs for non-destructive actions like focusing, scrolling, or measuring DOM elements.
+* A component doesn't expose its DOM nodes by default. You can opt into exposing a DOM node by using `forwardRef` and passing the second `ref` argument down to a specific node.
+* Avoid changing DOM nodes managed by React.
+* If you do modify DOM nodes managed by React, modify parts that React has no reason to update.
+
+# Challenges
+
+## Challenge 1 of 4: Play and pause the video
+
+In this example, the button toggle a state variable to switch between a playing and paused state. However, in order to actually play or pause the video, toggling state is not enough. You also need to call `play()` and `pause()` on the DOM element for the `<video>`. Add the ref to it, and make the button work.
+
+```javascript
+import { useState, useRef } from 'react';
+
+export default function VideoPlayer() {
+  const [isPlaying, setIsPlaying] = useState(false);
+
+  function handleClick() {
+    const nextIsPlaying = !isPlaying;
+    setIsPlaying(nextIsPlaying);
+  }
+
+  return (
+    <>
+      <button onClick={handleClick}>
+        {isPlaying ? 'Pause' : 'Play'}
+      </button>
+      <video width="250">
+        <source
+          src="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4"
+          type="video/mp4"
+        />
+      </video>
+    </>
+  )
+}
+```
+
+For an extra challenge, keep the "Play" button in sync with whether the video is playing even if the user right-clicks the video and plays it using the built-in browser media controls. You might want to listen to `onPlay` and `onPause` on the video to do that.
+
+## Challenge 2 of 4: 
+
+Make it so that clicking the "Search" button puts focus into the field.
+
+```javascript
+export default function Page() {
+  return (
+    <>
+      <nav>
+        <button>Search</button>
+      </nav>
+      <input
+        placeholder="Looking for something?"
+      />
+    </>
+  );
+}
+```
+
+## Challenge 3 of 4: Scrolling an image carousel
+
+This image carousel has a "Next" button that switches the active image. Mage the gallery scroll horizontally to the active image on click. You will want to call `scrollIntoView()` on the DOM node of the active image:
+
+```javascript
+node.scrollIntoView({
+  behavior: 'smooth',
+  block: 'nearest',
+  inline: 'center'
+});
+```
+
+```javascript
+import { useState } from 'react';
+
+export default function CatFriends() {
+  const [index, setIndex] = useState(0);
+  return (
+    <>
+      <nav>
+        <button onClick={() => {
+          if (index < catList.length - 1) {
+            setIndex(index + 1);
+          } else {
+            setIndex(0);
+          }
+        }}>
+          Next
+        </button>
+      </nav>
+      <div>
+        <ul>
+          {catList.map((cat, i) => (
+            <li key={cat.id}>
+              <img
+                className={
+                  index === i ?
+                    'active' :
+                    ''
+                }
+                src={cat.imageUrl}
+                alt={'Cat #' + cat.id}
+              />
+            </li>
+          ))}
+        </ul>
+      </div>
+    </>
+  );
+}
+
+const catList = [];
+for (let i = 0; i < 10; i++) {
+  catList.push({
+    id: i,
+    imageUrl: 'https://placekitten.com/250/200?image=' + i
+  });
+}
+```
+
+## Challenge 4 of 4: Focus the search field with separate components
+
+Make it so that clicking the "Search" button puts focus into the field. Note that each component is defined in a separate file and shouldn't be moved out of it. How do you connect them together?
+
+`App.js`:
+
+```javascript
+import SearchButton from './SearchButton.js';
+import SearchInput from './SearchInput.js';
+
+export default function Page() {
+  return (
+    <>
+      <nav>
+        <SearchButton />
+      </nav>
+      <SearchInput />
+    </>
+  );
+}
+```
+
+`SearchButton.js`:
+
+```javascript
+export default function SearchButton() {
+  return (
+    <button>
+      Search
+    </button>
+  );
+}
+```
+
+`SearchInput.js`:
+
+```javascript
+export default function SearchInput() {
+  return (
+    <input
+      placeholder="Looking for something?"
+    />
+  );
+}
+```
+
+# Solutions
+
+## Challenge 1 of 4:
+
+Declare a ref and put it on the `<video>` element. Then call `ref.current.play()` and `ref.current.pause()` in the event handler depending on the state of the next state.
+
+```javascript
+import { useState, useRef } from 'react';
+
+export default function VideoPlayer() {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const ref = useRef(null);
+
+  function handleClick() {
+    const nextIsPlaying = !isPlaying;
+    setIsPlaying(nextIsPlaying);
+
+    if (nextIsPlaying) {
+      ref.current.play();
+    } else {
+      ref.current.pause();
+    }
+  }
+
+  return (
+    <>
+      <button onClick={handleClick}>
+        {isPlaying ? 'Pause' : 'Play'}
+      </button>
+      <video
+        width="250"
+        ref={ref}
+        onPlay={() => setIsPlaying(true)}
+        onPause={() => setIsPlaying(false)}
+      >
+        <source
+          src="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4"
+          type="video/mp4"
+        />
+      </video>
+    </>
+  )
+}
+```
+
+In order to handle the built-in browser controls, you can add `onPlay` and `onPause` handlers to the `<video>` elements and call `setIsPlaying` from them. This way, if the user plays the video using the browser controls, the state will adjust accordingly.
+
+## Challenge 2 of 4:
+
+Add a ref to the input, and call `focus()` on the DOM node to focus it:
+
+```javascript
+import { useRef } from 'react';
+
+export default function Page() {
+  const inputRef = useRef(null);
+  return (
+    <>
+      <nav>
+        <button onClick={() => {
+          inputRef.current.focus();
+        }}>
+          Search
+        </button>
+      </nav>
+      <input
+        ref={inputRef}
+        placeholder="Looking for something?"
+      />
+    </>
+  );
+}
+```
+
+## Challenge 3 of 4:
+
+You can declare a `selectedRef` and then pass it conditionally only to the current image:
+
+```javascript
+<li ref={index === i ? selectRef : null}>
+```
+
+When `index === i`, meaning that the image is the selected one, the `<li>` will receive the `selectedRef`. React will make sure that `selectedRef.current` always points at the correct DOM node.
+
+Note that the `flushSync` call necessary to force React to update the DOM before the scroll. Otherwise, `selectedRef.current` would always point at the previously selected item.
+
+```javascript
+import { useRef, useState } from 'react';
+import { flushSync } from 'react-dom';
+
+export default function CatFriends() {
+  const selectedRef = useRef(null);
+  const [index, setIndex] = useState(0);
+
+  return (
+    <>
+      <nav>
+        <button onClick={() => {
+          flushSync(() => {
+            if (index < catList.length - 1) {
+              setIndex(index + 1);
+            } else {
+              setIndex(0);
+            }
+          });
+          selectedRef.current.scrollIntoView({
+            behavior: 'smooth',
+            block: 'nearest',
+            inline: 'center'
+          });
+        }}>
+          Next
+        </button>
+      </nav>
+      <div>
+        <ul>
+          {catList.map((cat, i) => (
+            <li
+              key={cat.id}
+              ref={index === i ?
+                selectedRef :
+                null
+              }
+            >
+              <img
+                className={
+                  index === i ?
+                    'active'
+                    : ''
+                }
+                src={cat.imageUrl}
+                alt={'Cat #' + cat.id}
+              />
+            </li>
+          ))}
+        </ul>
+      </div>
+    </>
+  );
+}
+
+const catList = [];
+for (let i = 0; i < 10; i++) {
+  catList.push({
+    id: i,
+    imageUrl: 'https://placekitten.com/250/200?image=' + i
+  });
+}
+```
+
+## Challenge 4 of 4:
+
+You'll need to add an `onClick` prop to the `SearchButton`, and make the `SearchButton` pass it down to the browser `<button> `. You'll also pass a ref down to `<SearchInput>`, which will forward it to the real `<input>` and populate it. Finally, in the click handler, you'll call `focus` on the DOM node stored inside that ref.
+
+`App.js`:
+
+```javascript
+import { useRef } from 'react';
+import SearchButton from './SearchButton.js';
+import SearchInput from './SearchInput.js';
+
+export default function Page() {
+  const inputRef = useRef(null);
+  return (
+    <>
+      <nav>
+        <SearchButton onClick={() => {
+          inputRef.current.focus();
+        }} />
+      </nav>
+      <SearchInput ref={inputRef} />
+    </>
+  );
+}
+```
+
+`SearchButton.js`:
+
+```javascript
+export default function SearchButton({ onClick }) {
+  return (
+    <button onClick={onClick}>
+      Search
+    </button>
+  );
+}
+```
+
+`SearchInput.js`:
+
+```javascript
+import { forwardRef } from 'react';
+
+export default forwardRef(
+  function SearchInput(props, ref) {
+    return (
+      <input
+        ref={ref}
+        placeholder="Looking for something?"
+      />
+    );
+  }
+);
+```
+
+
