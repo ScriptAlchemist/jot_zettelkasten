@@ -487,3 +487,7 @@ listRef.current.lastChild.scrollIntoView();
 > immediately update the DOM. So the time you scroll the list to its
 > last element, the todo has not yet been added. This is why scrolling
 > always "lags behind" by one item.
+>
+> To fix this issue, you can force React to update ("flush") the DOM
+> synchronously. To do this, import `flushSync` from `react-dom` and wrap
+> the state update into `flushSync` call:
