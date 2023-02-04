@@ -790,12 +790,190 @@ This works well if you use the `allSettled` and expect a different type of data 
 
 ## Racing Promises
 
+Race conditions can cause problems. Imagine you have a few copies of your endpoint deployed. You want the fastest data. Using the closest endpoint. The time to get data will always vary. It would be nice to always get the data from the fastest location. Promises can help simplify this.
+
+```javascript
+export function race() {
+  let users = axios.get("http://localhost:3000/users");
+  let backup = axios.get("http://localhost:3001/users");
+
+  Promise.race([users, backup])
+    .then(users => setText(JSON.stringify(users.data)))
+    .catch(reason => setText(reason));
+```
+
+Race will return with the first one the settles. That also mean the first one can fail. That the data is completely lost.
+
+Race is a rare function.
+
+## Secrets of async/await
+
+It's time to learn and de-mistify the useful syntax.
+
+## Iterating with Async/Await
+
+JavaScript promises are kind of old. They've already been replaced by async/await. What the point of having it. It makes it easier to use promises in syncronous format. Think of it as syntactic sugar. Designed to make things easier to read and express.
+
+### Two Keywords
+
+* `async`
+  - Function: `async function getNames() { return []; }`
+  - Fat Arrow: `const getNames = async () => { return []; }`
+  - This function will return an implicit promise
+  - Return value is wrapped in a promise (could be a rejected promise)
+* `await`
+  - Must be used inside of `async`
+  - Only blocks the current function
+  - `const getNames = async () => { await someFunc(); doSomethingElse(); }`
+  - This would stop the `doSomethingElse` function from running until the `someFunc()` is done
+  - It would not stop another function from executing. Only the functions inside of the `async`
+
+## Awaiting a Call
+
+Let's get the `iterating.mjs` file:
+
+```javascript
+import setText, {appendText} from './results.mjs';
+
+export function get() {}
+
+export function getCatch() {}
+
+export function chain() {}
+
+export function concurrent() {}
+
+export function parallel() {}
+```
+
+We will start with the first one `get()`:
+
+```javascript
+export function get() {
+  const {data} = await axios.get("http://localhost:3000/orders/1");
+  setText(JSON.stringify(data));
+}
+```
+
+We use the await with `axios`. You can destucture the data because of the await call. There is actually an error on the function above.
+
+```javascript
+export async function get() {
+  const {data} = await axios.get("http://localhost:3000/orders/1");
+  setText(JSON.stringify(data));
+}
+```
+
+This time it works. This is because we added `async` to the function. 
+
+`promise`:
+
+```javascript
+axios.get("/orders/1");
+.then(({data}) => {
+  setText(JSON.stringify(data))
+});
+```
+
+`await`:
+
+```javascript
+const {data} = await axios.get("/orders/1");
+
+setText(JSON.stringify(data));
+```
+
+The above two examples are the same thing. One is a promise and the other is an await.
+
+What happens here when a call like await fails?
+
+## Handling Errors with Async/Await
+
+Change the route to get orders 123. This will fail. We will use the `try` and `catch` block. You now have the ability to handle the error for synchronous and asynchronous code.
+
+```javascript
+export async function getCatch() {
+  try {
+    const {data} = await axios.get("http://localhost:3000/orders/123");
+    setText(JSON.stringify(data));
+  } catch (error) {
+    setText(error);
+  }
+}
+```
+
+## Chaining Async/Await
+
+Going into the `consuming.js` file and find the `chain()` function. To be reminded what we did with promises. Get the order 1 and make another API call the get the shipping information. Then we set the text of the city that it was shipped to.
+
+```javascript
+export async function chain() {
+  const {data} = await axios.get("http://localhost:3000/orders/1");
+  const {data: address} = await axios.get(`http://localhost:3000/addresses/${data.shippingAddress}`);
+  setText(`City: ${JSON.stringify(address.city)}`);
+}
+```
+
+It is the same result we get with promises. There is less code and it's a bit cleaners.
+
+How can I made a non-sequential call?
+
+## Awaiting Concurrent Requests
+
+Sometimes you don't want functions to depend on other functions.
+
+```javascript
+export async function concurrent() {
+  const orderStatus = axios.get("http://localhost:3000/orderStatuses");
+  const orders = axios.get("http://localhost:3000/orders");
+
+  setText("");
+
+  const {data: statuses} = await orderStatus;
+  const {data: order} = await orders;
+
+  appendText(JSON.stringify(statuses));
+  appendText(JSON.stringify(order[0]));
+}
+```
+
+If you click on the concurrent button. By not putting the await on at first it allowed the functions to kick off first. That's why the order's functions completed before the status. They started at the same time. The code ran at the same time. Even though we asked the slower request to start first.
+
+What if we wanted to handle the same two calls. But handle the order they come back.
 
 
+## Awaiting Parallel Calls
 
+```javascript
+export default async function parallel() {
+  setText("");
 
+  await Promise.all([
+    (async () => {
+      const {data} = await axios.get("http://localhost:3000/orderStatuses");
+      appendText(JSON.stringify(data));
+    })(),
+    (async () => {
+      const {data} = await axios.get("http://localhost:3000/orders");
+      appendText(JSON.stringify(data));
+    })()
+  ]);
+}
+```
 
+With this construct we have two promises in promise.all. Since we are awaiting the promise.all it won't end until they all end. If you run this the orders finishes before order status.
 
+With this approach. This is handled as the promise settles.
 
+# Summary
 
+There are 3 states
 
+* Pending
+* Fulfilled
+* Rejected
+
+* `let temp = new Promise((resolve, reject) => {});`
+* `Async/await`
+
+Getting code to work together. Making it concurrent and even parallel. 
