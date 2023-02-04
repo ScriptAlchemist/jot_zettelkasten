@@ -739,6 +739,28 @@ How do we get independent data from calls. I don't want it to fail on 1 reject.
 ## Settling All Promises
 
 Now let's get back as much data as possible without failing on a reject.
+Let's change the name from `all` to `allSettled`. It's similar to all, but
+it's different. The data returned is different.
+
+`resolved.js`:
+
+```javascript
+{
+ status: "fulfilled",
+ value: {}
+}
+```
+
+`rejected.js`:
+
+```javascript
+{
+ status: "rejected",
+ value: {}
+}
+```
+
+You don't need a catch block because it will return all the data. Even the rejected ones. Even though you don't need the catch. It's recommended to get any other errors that pop up.
 
 ```javascript
 export function allSettled() {
@@ -747,18 +769,27 @@ export function allSettled() {
   let userTypes = axios.get("http://localhost:3000/userTypes");
   let addressTypes = axios.get("http://localhost:3000/addressTypes");
 
-  Promise.all([categories, statuses, userTypes, addressTypes])
-    .then(([cat, stat, type, address]) => {
-      setText("");
+  Promise.allSettled([categories, statuses, userTypes, addressTypes])
+    .then((value) => {
+      let results = value.map(v => {
+        if(v.status === 'fulfilled') {
+          return `FULFILLED: ${JSON.stringify(v.value.data[0])} `;
+        }
 
-      appendText(JSON.stringify(cat.data));
-      appendText(JSON.stringify(stat.data));
-      appendText(JSON.stringify(type.data));
-      appendText(JSON.stringify(address.data));
+        return `REJECTED: ${v.reason.message} `;
+      });
 
-    }).catch(reason => setText(reason));
+      setText(results);
+    }).catch(reason => {
+      setText(reason));
+    }):
 }
 ```
+
+This works well if you use the `allSettled` and expect a different type of data back. It brings more flexibility over `Promise.all`
+
+## Racing Promises
+
 
 
 
