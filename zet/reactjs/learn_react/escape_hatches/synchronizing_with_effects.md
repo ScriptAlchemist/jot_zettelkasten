@@ -633,6 +633,71 @@ useEffect(() => {
 }, [userId]);
 ```
 
-You can't "undo" a network request that already happened, but your cleanup function should ensure that the fetch that's not relevant anymore does not keep affecting your application.
+You can't "undo" a network request that already happened, but your cleanup function should ensure that the fetch that's not relevant anymore does not keep affecting your application. For example, if the `userId` changes from `Alice` to `Bob`, cleanup ensures that the `Alice` response is ignored even if it arrives after `Bob`.
 
+In development, you will see two fetches in the Network tab. There is nothing wrong with that. With the approach above, the first Effect will immediately get cleaned up so its copy of the `ignore` variable will be set to `true`. So even though there is an extra request, it won't affect the state thanks to the `if (!ignore)` check.
+
+In production, there will only be one request. If the second request in development is bothering you, the best approach is to use a solution that de-duplicates requests and caches their responses between components:
+
+```javascript
+function TodoList() {
+  const todos = useSomeDataLibrary(`/api/user/${userId}/todos`);
+  //..
+```
+
+This will not only improve the development experience, but also make your application feel faster. For example, the user pressing the Back button won't have to wait for some data to load again because it will be cached. You can either build such a cache yourself or use one of the many existing alternatives to manual fetching in Effects.
+
+> ##### Deep Dive
+> #### What are good alternatives to data fetching in Effects?
+>
+> Writing `fetch` calls inside Effect is a popular way to fetch data,
+> especially in fully client-side apps. This is, however, a very manual
+> approach and it has significant downsides:
+>
+> * Effects don't run on the server. This means that the initial server-rendered HTML will only include a loading state with no data. The client computer will have to download all JavaScript and render your app only to discover that now it needs to load the data. This is not every efficient.
+> * Fetching directly in Effects makes it easy to create "network waterfalls". You render the parent component, it fetches some data, renders the child components, and then they start fetching their data. If the network is not very fast, this is significantly slower than fetching all data in parallel.
+> * Fetching directly in Effects usually means you don't preload or cache data. For example, if the component unmounts and then mounts again, it would have to fetch the data again.
+> * It's not very ergonomic. There's quite a bit of boilerplate code involved when writing `fetch` calls in a way that doesn't suffer from bugs like race conditions.
+>
+> This list of downsides is not specific to React. It applies to
+> fetching data on mount with any library. Like with routing, data
+> fetching is not trivial to do well, so we recommend the following
+> approaches:
+>
+> * If you use a framework, use its built-in data fetching mechanism. Modern React frameworks have integrated data fetching mechanisms that are efficient and don't suffer from the above pitfalls.
+> * Otherwise, consider using or building a client-side cache. Popular open source solutions include `React Query`, `useSWR`, and `React Router 6.4+`. You can build your own solution too, in which case you would use Effects under the hood but also add logic for de-duplicating requests, caching responses, and avoiding network waterfalls (by preloading data or hoisting data requirements to routes).
+>
+> You can continue fetching data directly in Effects if neither of these
+> approaches suit you.
+
+### Sending analytics
+
+Consider this code that sends analytics event on the page visit:
+
+```javascript
+useEffect(() => {
+  logVisit(url); // Sends a POST request
+}, [url]);
+```
+
+In development, `logVisit` will be called twice for every URL, so you might be tempted to try to work around it. We recommend to keep this code as is. Like with earlier examples, there is no user-visible behavior difference between running it once and running it twice. From a practical point of view, `logVisit` should not do anything in development because you don't want the logs from the development machines to skew the production metrics. Your component remounts every time you save its file, so it would send extra visits during development anyway.
+
+In production, there will be no duplicate logs.
+
+To debug the analytics events you're sending, you can deploy your app to a staging environment (which runs in production mode) or temporarily opt out of `Strict Mode` and its development-only remounting checks. You may also send analytics from the route change event handlers instead of Effects. For even more precise analytics, intersection observers can help track which components are in the viewport and how long they remain visible.
+
+### Not an Effect: Initializing the application
+
+Some logic should only run once when the application starts. You can put it outside your components:
+
+```javascript
+if (typeof window !== 'undefined') { // Check if we're running in the browser
+  checkAuthToken();
+  loadDataFromLocalStorage();
+}
+
+function App() {
+  // ..
+}
+```
 
