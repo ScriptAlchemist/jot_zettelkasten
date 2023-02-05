@@ -701,3 +701,360 @@ function App() {
 }
 ```
 
+This guarantees that such logic only runs once after the browser loads the page.
+
+### Not an Effect: Buying a product
+
+Sometimes, even if you write a cleanup function, there's no way to prevent user-visible consequences of running the Effect twice. For example, maybe your Effect sends a POST request like buying a product:
+
+```javascript
+useEffect(() => {
+  // 🛑 Wrong: This Effect fires twice in development, exposing a problem in the code
+  fetch('/api/buy', { method: 'POST' });
+}, []);
+```
+
+You wouldn't want to buy the product twice. However, this is also why you shouldn't put this logic in an Effect. What if the user goes to another page and then presses Back? Your Effect would run again. You don't want to buy the product when the user visits a page; you want to but it when the user clicks the Buy button.
+
+Buying is not caused by rendering; it's caused by a specific interaction. It only runs once because the interaction (a click) happens once. Delete the Effect and move your `/api/buy` request into the Buy button event handler:
+
+```javascript
+function handleClick() {
+  // ✅ Buying is an event because it is cause by a particular interaction
+  fetch('/api/buy', { method: 'POST' });
+}
+```
+
+This illustrates that if re-mounting breaks the logic of your application, this usually uncovers existing bugs. From the user's perspective, visiting a page shouldn't be different from visiting it, clicking a link, and then pressing Back. React verifies that your components don't break this principle by re-mounting them once in development.
+
+### Putting it all together
+
+This playground can help you "get a feel" for how Effect work in practice.
+
+This example uses `setTimeout` to schedule a console.log with the input text to appear three seconds after the Effect runs. The cleanup function cancels the pending timeout. Start by pressing "Mount the component":
+
+```javascript
+import { useState, useEffect } from 'react';
+
+function Playground() {
+  const [text, setText] = useState('a');
+  
+
+  useEffect(() => {
+    function onTimeout() {
+      console.log('⏰ ' + text);
+    }
+
+    console.log('🔵 "' + text + '" log');
+    const timeoutId = setTimeout(ontimout, 3000);
+
+    return () => {
+      console.log('  Cancel "' + text + '" log');
+      clearTimeout(timeoutId);
+    };
+  }, [text]);
+
+  return (
+    <>
+      <label>
+        What to log:{' '}
+        <input
+          value={text}
+          onChange={e => setText(e.target.value)}
+        />
+      </label>
+      <h1>{text}</h1>
+    </>
+  );
+}
+
+export default function App() {
+  const [show, setShow] = useState(false);
+  return (
+    <>
+      <button onClick={() => setShow(!show)}>
+        {show ? 'Unmount' : 'Mount'} the component
+      </button>
+      {show && <hr />}
+      {show && <Playground />}
+    </>
+  );
+}
+```
+
+You will see three logs at first: `Schedule "a" log`, `Cancel "a" log`, and `Schedule "a" log` again. Three second later there will also be a log saying `a`. As you learned earlier on this page, the extra schedule/cancel pair is because React remount the component once in development to verify that you've implemented cleanup well.
+
+Now edit the input to say `abc`. If you do it fast enough, you'll see `Schedule "ab" log` immediately followed by `Cancel "ab" log` and `Schedule "abc" log`. React always cleans up the previous render's Effect before the next render's Effect. This is why even if you type into the input fast, there is at most one timeout scheduled at a time. Edit the input a few times and watch the console to get a feel for how Effects get cleaned up.
+
+Type something into the input and then immediately press "Unmount the component". Notice how unmounting cleans up the last render's Effect. In this example, it clears the last timeout before it has a chance to fire.
+
+Finally, edit the component above and comment out the cleanup function so that the timeouts don't get cancelled. Try typing `abcde` fast. What do you expect to happen in three seconds? Will `console.log(text)` inside the timeout print the latest `text` and produce five `abcde` logs? Give it a try to check your intuition!
+
+Three seconds later, you should see a sequence of logs (`a`, `ab`, `abc`, `abcd`, `abcde`) rather than five `abcde` logs. Each Effect "captures" the `text` value from its corresponding render. It doesn't matter that the `text` state changed: an Effect from the render with `text = 'ab'` will always see `ab`. In other words, Effects from each render are isolated from each other. If you're curious how this works, you can read about closures.
+
+> ##### Deep Dive
+> #### Each render has its own Effects
+>
+> You can think of `useEffect` as "attaching" a piece of behavior to the
+> render output. Consider this Effect:
+
+```javascript
+export default function ChatRoom({ roomId }) {
+  useEffect(() => {
+    const connection = createConnection(roomId);
+    connection.connect();
+    return () => connection.disconnect();
+  }, [roomId]);
+
+  return <h1>Welcome to {roomId}!</h1>;
+}
+```
+
+> Let's see what exactly happens as the user navigates around the app.
+>
+> ##### Initial render
+>
+> This user visits `<ChatRoom roomId="general" />`. Let's mentally
+> substitute `roomId` with `general`:
+
+```javascript
+// JSX for the first render (roomId = "general")
+return <h1>Welcome to general!</h1>;
+```
+
+> The Effect is also part of the rendering output. The first render's Effect becomes:
+
+```javascript
+// Effect for the first render (roomId = "general")
+() => {
+  const connection = createConnection('general');
+  connection.connect();
+  return () => connection.disconnect();
+},
+// Dependencies for the first render (roomId = "general")
+['general']
+```
+
+> React runs this Effect, which connects to the `general` chat room.
+>
+> ##### Re-render with same dependencies
+>
+> Let's say `<ChatRoom roomId="general" />` re-renders. The JSX output
+> is the same:
+
+```javascript
+// JSX for the second render (roomId = "general")
+return <h1>Welcome to general!<h1>;
+```
+
+> React sees that the rendering output has not changed, so it doesn't update the DOM.
+>
+> The Effect from the second render looks like this:
+
+```javascript
+// Effect for the second render (roomId = "general")
+() => {
+  const connection = createConnection('general');
+  connection.connect();
+  return () => connection.disconnect();
+},
+//Dependencies for the second render (roomId = 'general')
+['general']
+```
+
+> React compares `['general']` from the second render with `['general']` from the first render. Because all dependencies are the same, React ignores the Effect from the second render. It never gets called.
+
+> ##### Re-render with different dependencies
+>
+> Then, the user visits `<ChatRoom roomId="travel" />`. This time, the
+> component returns different JSX:
+
+```javascript
+// JSX for the third render (room + 'travel')
+return <h1>Welcome to travel!</h1>;
+```
+
+> React updates the DOM to change `Welcome to general` into `Welcome to travel`.
+>
+> The Effect from the third render looks like this:
+
+```javascript
+// Effect for the third render (roomId = 'travel')
+() => {
+  const connection = createConnection('travel');
+  connection.connect();
+  return () => connection.disconnect();
+},
+// Dependencies for the third render (roomId = 'travel')
+['travel']
+```
+
+> React compares `['travel']` from the third render with `['general']` from the second render. One dependency is different: `Object.is('travel', 'general')` is `false`. The Effect can't be skipped.
+>
+> Before React can apply the Effect from the third render, it needs to
+> clean up the last Effect that did run. The second render's Effect was
+> skipped, so React needs to clean up the first render's Effect. If you
+> scroll up to the first render, you'll see that its cleanup calls
+> `disconnect()` on the connection that was created with
+> `createConnection('general')`. This disconnects the app from the
+> `general` chat room.
+>
+> After that, React runs the third render's Effect. It connects to the
+> `travel` chat room.
+>
+> ##### Unmount
+>
+> Finally, let's say the user navigates away, and the `Chatroom`
+> component unmounts. React runs the last Effect's cleanup function.
+> The last Effect was from the third render. The third render's cleanup
+> destroys the `createConnection('travel')` connection. So the app
+> disconnects from the `travel` room.
+>
+> ##### Development-only behaviors
+>
+> When Strict mode is on, React remounts every component once after
+> mount (state and DOM are preserved). This helps you find Effects that
+> need cleanup and exposes bugs like race conditions early. Additionally,
+> React will re-mount the Effect whenever you save a file in
+> development. Both of these behaviors are development-only
+
+## Recap
+
+* Unlike events, Effects are caused by rendering itself rather than a particular interaction.
+* Effects let you synchronize a component with some external system (third-party API, network, etc).
+* By default, Effects run after every render (including the initial one).
+* React will skip the Effect if all of its dependencies have the same values as during the last render.
+* You can't "choose" your dependencies. They are determined by the code inside the Effect.
+* An empty dependency array (`[]`) corresponds to the component "mounting", i.e. being added to the screen.
+* When Strict Mode is on, React mounts components twice (in development only!) to stress-test your Effects.
+* If your Effect breaks because of remounting, you need to implement a cleanup function.
+* React will call your cleanup function before the Effect run next time, and during the unmount.
+
+# Challenges
+
+## Challenge 1 of 4: Focus a field on mount
+
+In this example, the form render a `<MyInput />` component.
+
+Use the input's `focus()` method to make `MyIinput` automatically focus when it appears on the screen. There is already a commented out implementation, but it doesn't quite work. Figure out why it doesn't work, and fix it. (If you're familiar with the `autoFocus` attribute, pretend that it does not exist: we are reimplementing the same functionality from scratch.)
+
+```javascript
+import { useEffect, useRef } from 'react';
+
+export default function MyInput({ value, onChange }) {
+  const ref = useRef(null);
+
+  // TODO: This doesn't quite work. Fix it.
+  // ref.current.focus()
+
+  return (
+    <input
+      ref={ref}
+      value={value}
+      onChange={onChange}
+    />
+  );
+}
+```
+
+To verify that your solution works, press "Show form" and verify that the input receives focus (becomes highlighted and the cursor is places inside). Press "hide form" and "Show form" again. Verify the input is highlighted again.
+
+`MyInput` should only focus on mount rather than every render. To verify that the behavior is right, press "Show form" and then repeatedly press the "Make it uppercase" checkbox. Clicking the checkbox should not focus the input above it.
+
+## Challenge 2 of 4: Focus a field conditionally
+
+This form renders two `MyInput />` components.
+
+Press "Show form" and notice that the second field automatically gets focused. This is because both of the `<MyInput />` components try to focus the field inside. When you call `focus()` for two input fields in a row, the last one always "wins".
+
+Let's say you want to focus the first field. The first `MyInput` component now receives a boolean `shouldFocus` prop set to `true`. Change the logic so that `focus()` is only called if the `shouldFocus` prop received by `MyInput` is `true`.
+
+```javascript
+import { useEffect, useRef } from 'react';
+
+export default function MyInput({ shouldFocus, value, onChange }) {
+  const ref = useRef(null);
+
+  // TODO: call focus() only if shouldFocus is true.
+  useEffect(() => {
+    ref.current.focus();
+  }, []);
+
+  return (
+    <input
+      ref={ref}
+      value={value}
+      onChange={onChange}
+    />
+  );
+}
+```
+
+To verify your solution, press "show form" and "Hide form" repeatedly. When the form appears, only the first input should get focused. This is because the parent component renders the first input with `shouldFocus={true}` and the second input with `shouldFocus={false}`. Also check that both inputs still work and you can type into both of them.
+
+## Challenge 3 of 4: Fix an interval that fires twice
+
+This `Counter` component displays a counter that should increment every second. On mount, it calls `setInterval`. This causes `onTick` to run every second. The `onTick` function increments the counter.
+
+However, instead of incrementing once per second, it increments twice. Why is that? Find the cause of the bug and fix it.
+
+```javascript
+import { useState, useEffect } from 'react';
+
+export default function Counter() {
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    function onTick() {
+      setCount(c => c + 1);
+    }
+
+    setInterval(onTick, 1000);
+  }, []);
+
+  return <h1>{count}</h1>;
+}
+```
+
+## Challenge 4 of 4: Fix fetching inside an Effect
+
+This component shows the biography for the selected person. It loads the biography by calling an asynchronous function `fetchBio(person)` on mount and whenever `person` changes. That asynchronous function returns a Promise which eventually resolves to a string. When fetching is done, ti calls `setBio` to display that string under the select box.
+
+```javascript
+import { useState, useEffect } from 'react';
+import { fetchBio } from './api.js';
+
+export default function Page() {
+  const [person, setPerson] = useState('Alice');
+  const [bio, setBio] = useState(null);
+
+  useEffect(() => {
+    setBio(null);
+    fetchBio(person).then(result => {
+      setBio(result);
+    });
+  }, [person]);
+
+  return (
+    <>
+      <select value={person} onChange={e => {
+        setPerson(e.target.value);
+      }}>
+        <option value="Alice">Alice</option>
+        <option value="Bob">Bob</option>
+        <option value="Taylor">Taylor</option>
+      </select>
+      <hr />
+      <p><i>{bio ?? 'Loading...'}</i></p>
+    </>
+  );
+}
+```
+
+There is a bug in this code. Start by selecting "Alice". Then select "Bob" and then immediately after that select "Taylor". If you do this fast enough, you will notice that bug: Taylor is selected, but the paragraph below says "This is Bob's bio."
+
+Why does this happen? Fix the bug inside this Effect.
+
+# Solutions
+
+## Challenge 1 of 4: 
