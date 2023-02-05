@@ -1058,3 +1058,146 @@ Why does this happen? Fix the bug inside this Effect.
 # Solutions
 
 ## Challenge 1 of 4: 
+
+Calling `ref.current.focus()` during render is wrong because it is a side effect. Side effects should either be placed inside an event handler or be declared with `useEffect`. In the case, the side effect is caused by the component appearing rather than by any specific interaction, so it makes sense to put in an Effect.
+
+To fix the mistake, wrap the `ref.current.focus()` call into an Effect declaration. Then, to ensure that this Effect runs only on mount rather than after every render, add the empty `[]` dependencies to it.
+
+```javascript
+import { useEffect, useRef } from 'react';
+
+export default function MyInput({ value, onChange }) {
+  const ref = useRef(null);
+
+  useEffect(() => {
+    ref.current.focus();
+  }, []);
+
+  return (
+    <input
+      ref={ref}
+      value={value}
+      onChange={onChange}
+    />
+  );
+}
+```
+
+## Challenge 2 of 4: 
+
+Put the conditional logic inside the Effect. You will need to specify `shouldFocus` as a dependency because you are using it inside the Effect. (This means that if some input's `shouldFocus` changes from `false` to `true`, it will focus after mount.)
+
+```javascript
+import { useEffect, useRef } from 'react';
+
+export default function MyInput({ shouldFocus, value, onChange }) {
+  const ref = useRef(null);
+
+  useEffect(() => {
+    if (shouldFocus) {
+      ref.current.focus();
+    }
+  }, [shouldFocus]);
+
+  return (
+    <input
+      ref={ref}
+      value={value}
+      onChange={onChange}
+    />
+  );
+}
+```
+
+## Challenge 3 of 4: 
+
+When `Strict Mode` is on (like in the sandboxes on this site), React remounts each component once in development. This causes the interval to be set up twice, and this is why each second the counter increments twice.
+
+However, React's behavior is not the cause of the bug: the bug already exists in the code. React's behavior makes the bug more noticeable. The real cause is that this Effect starts a process but doesn't provide a way to clean it up.
+
+To fix this code, save the interval ID returned by `setInterval`, and implement a cleanup function with `clearInterval`:
+
+```javascript
+import { useState, useEffect } from 'react';
+
+export default function Counter() {
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    function onTick() {
+      setCount(c => c + 1);
+    }
+
+    const intervalId = setInterval(onTick, 1000);
+    return () => clearInterval(intervalId);
+  }, []);
+
+  return <h1>{count}</h1>;
+}
+```
+
+In development, React will still remount your component once to verify that you've implemented cleanup well. So there will be a `setInterval` call, immediately followed by `clearInterval`, and `setInterval` again. In production, there will be only one `setInterval` call. The user-visible behavior in both cases is the same: the counter increments once per second.
+
+## Challenge 4 of 4:
+
+To trigger the bug, things need to happen in this order:
+
+* Selecting `Bob` trigger `fetchBio('Bob')`
+* Selecting `Taylor` triggers `fetchBio('Taylor')`
+* Fetching `Taylor` completes before fetching `Bob`
+* The Effect from the `Taylor` render calls `setBio('This is Taylor's bio')`
+* Fetching `Bob` completes
+* The Effect from the `Bob` render calls `setBio('This is Bob\'s bio')`
+
+This is why you see Bob's bio even though Taylor is selected. Bugs like this care called race conditions because two asynchronous operations are "racing" with each other, and they might arrive in an unexpected order.
+
+To fix this race condition, add a cleanup function:
+
+```javascript
+import { useState, useEffect } from 'react';
+import { fetchBio } from './api.js';
+
+export default function Page() {
+  const [person, setPerson] = useState('Alice');
+  const [bio, setBio] = useState(null);
+  useEffect(() => {
+    let ignore = false;
+    setBio(null);
+    fetchBio(person).then(result => {
+      if (!ignore) {
+        setBio(result);
+      }
+    });
+    return () => {
+      ignore = true;
+    }
+  }, [person]);
+
+  return (
+    <>
+      <select value={person} onChange={e => {
+        setPerson(e.target.value);
+      }}>
+        <option value="Alice">Alice</option>
+        <option value="Bob">Bob</option>
+        <option value="Taylor">Taylor</option>
+      </select>
+      <hr />
+      <p><i>{bio ?? 'Loading...'}</i></p>
+    </>
+  );
+}
+```
+
+Each render's Effect has its own `ignore` variable. Initially, the `ignore` variable is set to `false`. However, if an Effect gets cleaned up (such as when you select a different person), its `ignore` variable becomes `true`. So now it doesn't matter in which order the requests complete. Only the last person's Effect will have `ignore` set to `false`, so it will call `setBio(result)`. Past Effects have been cleaned up, so the `if (!ignore)` check will prevent them from calling `setBio`:
+
+* Selecting `Bob` triggers `fetchBio('Bob')`
+* Selecting `Taylor` triggers `fetchBio('Taylor')` and cleans up the previous (Bob's) Effect
+* Fetching `Taylor` completes before fetching `Bob`
+* The Effect from the `Taylor` render calls `setBio('This is Taylor's bio')`
+* Fetching `Bob` completes
+* The Effect from the `Bob` render does not do anything because its `ignore` flag was set to `true`
+
+In addition to ignoring the result of an outdated API call, you can also use `AbortController` to cancel the request that are not longer needed. However, by itself this is not enough to protect against race conditions. More asynchronous steps could be chained after the fetch, so using an explicit flag like `ignore` is the most reliable way to fix this type of problems.
+
+
