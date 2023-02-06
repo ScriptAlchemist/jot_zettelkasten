@@ -545,5 +545,50 @@ Delete the Effects and instead update the state of both components within the sa
 function Toggle({ onChange }) {
   const [isOn, setIsOn] = useState(false);
 
+  function updateToggle(nextIsOn) {
+    // ✅ Good: perform all updates during the event that caused them
+    setIsOn(nextIsOn);
+    onChange(nextIsOn);
+  }
+
+  function handleClick() {
+    updateToggle(!isOn);
+  }
+
+  function handleDragEnd(e) {
+    if (isCloserToRightEdge(e)) {
+      updateToggle(true);
+    } else {
+      updateToggle(false);
+    }
+  }
+  // ...
+}
+```
+
+With this approach, both the `Toggle` component and its parent component update their state during the event. React batches updates from different component together, so there will only be one render pass as a result.
+
+You might also be able to remove the state altogether, and instead receive `isOn` from the parent component:
+
+```javascript
+:// ✅ Also good: the component is fully controlled by its parent
+function Toggle({ isOn, onChange }) {
+  function handleClick() {
+    onChange(!isOn);
+  }
+
+  function handleDragEnd(e) {
+    if (isCloserToRightEdge(e)) {
+      onChange(true);
+    } else {
+      onChange(false);
+    }
+  }
+  // ...
+}
+```
+
+"Lifting state up" lets the parent component fully control the `Toggle` by toggling the parent's own state. This means the parent component will have to contain more logic, but there will be less state overall to worry about. 
+
 
 
