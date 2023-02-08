@@ -699,11 +699,556 @@ function subscribe(callback) {
 }
 
 function useOnlineStatus() {
-  // :checkmark:
+  // :checkmark: Good: Subscribing to an external store with a built-in
+  Hook
+  return useSyncExternalStore(
+    subscribe, // React won't resubscribe for as long as you pass the same function
+    () => navigator.onLine, // How to get the value of the client
+    () => true // How to get the value of the server
+  );
+}
 
+function ChatIndicator() {
+  const isOnline = useOnlineStatue();
+  // ...
+}
+```
 
+This approach is less error-prone than manually syncing mutable data to
+React state with an Effect. Typically, you'll write a custom Hook like
+`useOnlineStatus()` above so that you don't need to repeat this code in
+the individual components. Rea more about subscribing to external stores
+from React components.
 
+## Fetching data
 
+Many apps use Effects to kick off data fetching. It is quite common to
+write a data fetching Effect like this:
 
+```javascript
+function SearchResults({ query }) {
+  const [results, setResults] = useState([]);
+  const [page, setPage] = useState(1);
+
+  useEffect(() => {
+    // 🛑 Avoid: Fetchign without cleanup logic
+    fetchResults(query, page).then(json => {
+      setResults(json);
+    });
+  }, [query, page]);
+
+  function handleNextPageClick() {
+    setPage(page + 1);
+  }
+  // ...
+}
+```
+
+You don't need to move this fetch to an event handler.
+
+This might seem like a contradiction with the earlier examples where you
+needed to put the logic into the event handlers! However, consider that
+it's not the typing event that's the main reason to fetch. Search inputs
+are often pre-populated from the URL, and the user might navigate Back
+and Forward without touching the input. It doesn't matter where `page`
+and `query` come from. while this component is visible, you want to keep
+`results` synchronized with data from the network according to the
+current `page` and `query`. This is why it's an Effect.
+
+However, the code above has a bug. Imagine you type `"hello"` fast. Then
+the `query` will change from `h`, to `he`, `hel`, `hell`, and `hello`.
+This will kick off separate fetches, but there is no guarantee about
+which order the responses will arrive in. For example, the `hell`
+response may arrive after the `hello` response. Since it will call
+`setResults()` last, you will be displaying the wrong search results.
+This is called a `race condition`: two different request `raced` against
+each other and come in a different order than you expected.
+
+To fix the race condition, you need to add a cleanup function to ignore
+stale responses:
+
+```javascript
+function SearchResults({ query }) {
+  const [results, setResults] = useState([]);
+  const [page, setPage] = useState(1);
+  useEffect(() => {
+    let ignore = false;
+    fetchResults(query, page).then(json => {
+      if(!ignore) setResults(json);
+    });
+    return () => {
+      ignore = true;
+    };
+  }, [query, page]);
+
+  function handleNextPageClick() {
+    setPage(page + 1);
+  }
+  // ...
+}
+```
+
+This ensures that when your Effect fetches data, all responses except
+the last requested one will be ignored.
+
+Handling race conditions is not the only difficulty with implementing
+data fetching. You might also want to think about how to cache the
+responses (so that the user can click Back and see the previous screen
+instantly instead of a spinner), how to fetch them on the server (so
+that the initial server-rendered HTML contains the fetched content
+instead of a spinner), and how to avoid network waterfalls (so that a
+child component that needs to fetch data doesn't have to wait for every
+parent above it to finish fetching their data before it can start).
+These issues apply to any UI library, not just React. Solving them is
+not trivial, which is why modern frameworks provide more efficient
+built-in data fetching mechanisms than writing Effect directly in your
+components.
+
+If you don't use a framework (and don't want to build your own) but
+would like to make data fetching from Effects more ergonomic, consider
+extracting your fetching logic into custom Hook like in this example:
+
+```javascript
+function SearchResults({ query }) {
+  const [page, setPage] = useState(1);
+  const params = new URLSearchParams({ query, page});
+  const results = useData(`/api/search?${params}`);
+
+  function handleNextPageClick() {
+    setPage(page + 1);
+  }
+    // ...
+}
+
+function useData(url) {
+  const [data, setData] useState(null);
+  useEffect(() => {
+    let ignore = false;
+    fetch(url)
+      .then(response => response.json())
+      .then(json => {
+        if (!ignore) setData(json);
+      });
+    return () => {
+      ignore = true;
+    };
+  }, [url]);
+  return data;
+}
+```
+
+You'll likely also want to add some logic for error handling and to
+track whether the content is loading. You can build a Hook like this
+yourself or use one of the many solutions already available in the React
+ecosystem. Although this alone won't be as efficient as using a
+framework's built-in data fetching mechanism, moving the data fetching
+logic into a custom Hook will make it easier to adopt an efficient data
+fetching strategy later.
+
+In general, whenever you have to resort to writing Effects, keep an eye
+out for when you can extract a piece of functionality into a custom
+Hook with a more declarative and purpose-built API like `useData`
+above. The fewer raw `useEffect` calls you have in your components, the
+easier you will find to maintain your application.
+
+## Recap
+
+* If you can calculate something during render, you don't need an
+  Effect.
+* To cache expensive calculations, add `useMemo` instead of `useEffect`.
+* To reset the state of an entire component tree, pass a different `key`
+  to it.
+* Code that needs to run because a component was displayed should be in
+  Effects, the rest should be in events.
+* If you need to update the state of several components, it's better to
+  do it during a single event.
+* Whenever you try to synchronize state variables in different
+  components, consider lifting state up
+* You can fetch data with Effect, but you need to implement cleanup to
+  avoid race conditions.
+
+# Challenges
+
+## Challenge 1 of 4: Transform data without Effects
+
+The `TodoList` below displays a list of todos. When the "Show only
+active todos" checkbox is ticked, completed todos are not displayed in
+the list. Regardless of which todos are visible, the footer displays teh
+count to todos that are not yet completed.
+
+Simplify this component by removing all the unnecessary state and
+Effects.
+
+`todos.js`:
+
+```javascript
+let nextId = 0;
+
+export function createTodo(text, completed = false) {
+  return {
+    id: nextId++,
+    text,
+    completed
+  };
+}
+
+export const initialTodos = [
+  createTodo('Get apples', true),
+  createTodo('Get oranges', true),
+  createTodo('Get carrots'),
+];
+```
+
+`App.js`:
+
+```javascript
+import { useState, useEffect } from 'react';
+import { initialTodos, createTodo } from './todos.js';
+
+export default function TodoList() {
+  const [todos, setTodos] = useState(initialTodos);
+  const [showActive, setShowActive] = useState(false);
+  const [activeTodos, setActiveTodos] = useState([]);
+  const [visibleTodos, setVisibleTodos] = useState([]);
+  const [footer, setFooter] = useState(null);
+
+  useEffect(() => {
+    setActiveTodos(todos.filter(todo => !todo.completed));
+  }, [todos]);
+
+  useEffect(() => {
+    setVisibleTodos(showActive ? activeTodos : todos);
+  }, [showActive, todos, activeTodos]);
+
+  useEffect(() => {
+    setFooter(
+      <footer>
+        {activeTodos.length} todos left
+      </footer>
+    );
+  }, [activeTodos]);
+
+  return (
+    <>
+      <label>
+        <input
+          type="checkbox"
+          checked={showActive}
+          onChange={e => setShowActive(e.target.checked)}
+        />
+        Show only active todos
+      </label>
+      <NewTodo onAdd={newTodo => setTodos([...todos, newTodo])} />
+      <ul>
+        {visibleTodos.map(todo => (
+          <li key={todo.id}>
+            {todo.completed ? <s>{todo.text}</s> : todo.text}
+          </li>
+        ))}
+      </ul>
+      {footer}
+    </>
+  );
+}
+
+function NewTodo({ onAdd }) {
+  const [text, setText] = useState('');
+
+  function handleAddClick() {
+    setText('');
+    onAdd(createTodo(text));
+  }
+
+  return (
+    <>
+      <input value={text} onChange={e => setText(e.target.value)} />
+      <button onClick={handleAddClick}>
+        Add
+      </button>
+    </>
+  );
+}
+```
+
+## Challenge 2 of 4: Cache a calculation without Effects
+
+In this example, filtering the todos was extracted into a separete
+function called `getVisibleTodos()`. This function contians a
+`console.log()` call inside of it which helps you notice when it's being
+called. Toggle "Show only active todos" and notice that it causes
+`getVisibleTodos()` to re-run. This is expected because visible todos
+change when you toggle which ones to display.
+
+Your task is to remove the Effect that recomputes the `visibleTodos`
+list in the `TodoList` component. However, you need to make sure that
+`getVisibleTodos()` does not re-run (and so does not print any logs)
+when you type into the input.
+
+`todos.js`:
+
+```javascript
+let nextId = 0;
+let calls = 0;
+
+export function getVisibleTodos(todos, showActive) {
+  console.log(`getVisibleTodos() was called ${++calls} times`);
+  const activeTodos = todos.filter(todo => !todo.completed);
+  const visibleTodos = showActive ? activeTodos : todos;
+  return visibleTodos;
+}
+
+export function createTodo(text, completed = false) {
+  return {
+    id: nextId++,
+    text,
+    completed
+  };
+}
+
+export const initialTodos = [
+  createTodo('Get apples', true),
+  createTodo('Get oranges', true),
+  createTodo('Get carrots'),
+];
+```
+
+`App.js`:
+
+```javascript
+import { useState, useEffect } from 'react';
+import { initialTodos, createTodo, getVisibleTodos } from './todos.js';
+
+export default function TodoList() {
+  const [todos, setTodos] = useState(initialTodos);
+  const [showActive, setShowActive] = useState(false);
+  const [text, setText] = useState('');
+  const [visibleTodos, setVisibleTodos] = useState([]);
+
+  useEffect(() => {
+    setVisibleTodos(getVisibleTodos(todos, showActive));
+  }, [todos, showActive]);
+
+  function handleAddClick() {
+    setText('');
+    setTodos([...todos, createTodo(text)]);
+  }
+
+  return (
+    <>
+      <label>
+        <input
+          type="checkbox"
+          checked={showActive}
+          onChange={e => setShowActive(e.target.checked)}
+        />
+        Show only active todos
+      </label>
+      <input value={text} onChange={e => setText(e.target.value)} />
+      <button onClick={handleAddClick}>
+        Add
+      </button>
+      <ul>
+        {visibleTodos.map(todo => (
+          <li key={todo.id}>
+            {todo.completed ? <s>{todo.text}</s> : todo.text}
+          </li>
+        ))}
+      </ul>
+    </>
+  );
+}
+```
+
+## Challenge 3 of 4: Reset State without Effects
+
+This `EditContact` component receives a contact object shaped like `{ id, name, email }` as the `savedContact` prop. Try editing the name and email input fields. When you press Save, the contact's buttons above the form updates to the edited name. When you press Reset, any pending changes in the form are discarded. Play around with this UI to get a feel for it.
+
+When you select a contact with the buttons at the top, the form resets to reflects that contact's details. This is done with an Effect inside `EditContact.js`. Remove this Effect. Find another way to reset the form hen `savedContact.id` changes.
+
+```javascript
+import { useState, useEffect } from 'react';
+
+export default function EditContact({ savedContact, onSave }) {
+  const [name, setName] = useState(savedContact.name);
+  const [email, setEmail] = useState(savedContact.email);
+
+  useEffect(() => {
+    setName(savedContact.name);
+    setEmail(savedContact.email);
+  }, [savedContact]);
+
+  return (
+    <section>
+      <label>
+        Name:{' '}
+        <input
+          type="text"
+          value={name}
+          onChange={e => setName(e.target.value)}
+        />
+      </label>
+      <label>
+        Email:{' '}
+        <input
+          type="email"
+          value={email}
+          onChange={e => setEmail(e.target.value)}
+        />
+      </label>
+      <button onClick={() => {
+        const updatedData = {
+          id: savedContact.id,
+          name: name,
+          email: email
+        };
+        onSave(updatedData);
+      }}>
+        Save
+      </button>
+      <button onClick={() => {
+        setName(savedContact.name);
+        setEmail(savedContact.email);
+      }}>
+        Reset
+      </button>
+    </section>
+  );
+}
+```
+
+## Challenge 4 of 4:  Submit a form without Effects
+
+This `Form` component lets you send a message to a friend. When you
+submit the form, the `showForm` state variable is set to `false`. This
+triggers an Effect calling `sendMessage(message)`, which sends the
+message (you can see it in the console). After the message is sent, you
+see a "Thank you" dialog with an "Open chat" button that lets you get
+back to the form.
+
+Your app's users are sending way too many messages. To make chatting a
+little bit more difficult, you've decided to show the "Thank you" dialog
+first rather than the form. change the `showForm` state variable to
+initialize to `false` instead of `true`. As soon as you make that
+change, the console will show that an empty message was sent. something
+int his logic is wrong!
+
+What's the root cause of this problem? And how can you fix it?
+
+```javascript
+import { useState, useEffect } from 'react';
+
+export default function Form() {
+  const [showForm, setShowForm] = useState(true);
+  const [message, setMessage] = useState('');
+
+  useEffect(() => {
+    if (!showForm) {
+      sendMessage(message);
+    }
+  }, [showForm, message]);
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    setShowForm(false);
+  }
+
+  if (!showForm) {
+    return (
+      <>
+        <h1>Thanks for using our services!</h1>
+        <button onClick={() => {
+          setMessage('');
+          setShowForm(true);
+        }}>
+          Open chat
+        </button>
+      </>
+    );
+  }
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <textarea
+        placeholder="Message"
+        value={message}
+        onChange={e => setMessage(e.target.value)}
+      />
+      <button type="submit" disabled={message === ''}>
+        Send
+      </button>
+    </form>
+  );
+}
+
+function sendMessage(message) {
+  console.log('Sending message: ' + message);
+}
+```
+
+# Solutions
+
+## Challenge 1 of 4:
+
+There are only two essential pieces of state in this example: the list
+of `todos` and the `showActive` state variable which represents whether
+the checkbox is ticked. All of the other state variables are redundant
+and can be calculated during rendering instead. This includes the
+`footer` which you can move directly in to the surrounding JSX.
+
+Your result should end up like this:
+
+```javascript
+import { useState } from 'react';
+import { initialTodos, createTodo } from './todos.js';
+
+export default function TodoList() {
+  const [todos, setTodos] = useState(initialTodos);
+  const [showActive, setShowActive] = useState(false);
+  const activeTodos = todos.filter(todo => !todo.completed);
+  const visibleTodos = showActive ? activeTodos : todos;
+
+  return (
+    <>
+      <label>
+        <input
+          type="checkbox"
+          checked={showActive}
+          onChange={e => setShowActive(e.target.checked)}
+        />
+        Show only active todos
+      </label>
+      <NewTodo onAdd={newTodo => setTodos([...todos, newTodo])} />
+      <ul>
+        {visibleTodos.map(todo => (
+          <li key={todo.id}>
+            {todo.completed ? <s>{todo.text}</s> : todo.text}
+          </li>
+        ))}
+      </ul>
+      <footer>
+        {activeTodos.length} todos left
+      </footer>
+    </>
+  );
+}
+
+function NewTodo({ onAdd }) {
+  const [text, setText] = useState('');
+
+  function handleAddClick() {
+    setText('');
+    onAdd(createTodo(text));
+  }
+
+  return (
+    <>
+      <input value={text} onChange={e => setText(e.target.value)} />
+      <button onClick={handleAddClick}>
+        Add
+      </button>
+    </>
+  );
+}
+```
 
 
