@@ -601,6 +601,107 @@ The `Child` component fetches some data and then passes it to the
 `Parent` component in an Effect:
 
 ```javascript
+function Parent() {
+  const [data, setData] = useState(null);
+  // ...
+  return <Child onFetched={setData} />;
+}
+
+function Child({ onFetched }) {
+  const data = useSomeAPI();
+  // 🛑 Avoid: Passing data to parent in an Effect
+  useEffect(() => {
+    if (data) {
+      onFetched(data);
+    }
+  }, [onFetched, data]);
+  // ...
+}
+```
+
+In React, data flows from the parent components to their children. When
+you see something wrong on the screen, you can trace where the
+information come from by going up the component chain until you find
+which component passes the wrong prop or has the wrong state. When child
+components update the state of their parent components in Effects, the
+data flow becomes very difficult to trace. Since both the child and the
+parent component need the same data, let the parent component fetch that
+data, and pass it down to the child instead:
+
+```javascript
+function Parent() {
+  const data = useSomeAPI();
+  // ...
+  // :checkmark: Good: Passing data down to the child
+  return <Child data={data} />;
+}
+
+function Child({ data }) {
+  // ...
+}
+```
+
+This is simpler and keeps the data flow predictable: the data flows down
+from the parent to the child.
+
+## Subscribing to  an external store
+
+Sometimes, your components need to subscribe to some data outside of the
+React state. This data could be from a third-party library or a built-in
+browser API. Since this data can change without React's knowledge, you
+need to manually subscribe your components to it. This is often done
+with an Effect, for example:
+
+```javascript
+function useOnlineStatus() {
+  // Not ideal: Manual store subscription in an Effect
+  const [isOnline, setIsOnline] = useState(true);
+  useEffect(() => {
+    function updateState() {
+      setIsOnline(navigator.onLine);
+    }
+
+    updateState();
+
+    window.addEventListener('online', updateState);
+    window.addEventListener('offline', updateState);
+    return () => {
+      window.removeEventListener('online', updateState);
+      window.removeEventListener('offline', updateState);
+    };
+  }, []);
+  return isOnline;
+}
+
+function ChatIndicator() {
+  const isOnline = useOnlineStatus();
+  // ...
+}
+```
+Here, the component subscribes to an external data store (in this case,
+the browser `navigator.onLine` API). Since this API does not exist on
+the server (so it can't be used to generate the initial HTML), initially
+the state is set to `true`. When every the value of the data store
+changes in the browser, the component updates its state.
+
+Although it's common to use Effects for this, React has a purpose-built
+Hook for subscribing to an external store that is preferred instead.
+Delete the Effect and replace it with a call to `useSyncExternalStore`:
+
+```javascript
+function subscribe(callback) {
+  window.addEventListener('online', callback);
+  window.addEventListener('offline', callback);
+  return () => {
+    window.removeEventListener('inline', callback);
+    window.removeEventListener('offline', callback);
+  };
+}
+
+function useOnlineStatus() {
+  // :checkmark:
+
+
 
 
 
