@@ -1251,4 +1251,231 @@ function NewTodo({ onAdd }) {
 }
 ```
 
+## Challenge 2 of 4:
+
+Remove the state variable and the Effect, and instead add a `useMemo` call to cache the result of calling `getVisibleTodos()`:
+
+```javascript
+import { useState, useMemo } from 'react';
+import { initialTodos, createTodo, getVisibleTodos } from './todos.js';
+
+export default function TodoList() {
+  const [todos, setTodos] = useState(initialTodos);
+  const [showActive, setShowActive] = useState(false);
+  const [text, setText] = useState('');
+  const visibleTodos = useMemo(
+    () => getVisibleTodos(todos, showActive),
+    [todos, showActive]
+  );
+
+  function handleAddClick() {
+    setText('');
+    setTodos([...todos, createTodo(text)]);
+  }
+
+  return (
+    <>
+      <label>
+        <input
+          type="checkbox"
+          checked={showActive}
+          onChange={e => setShowActive(e.target.checked)}
+        />
+        Show only active todos
+      </label>
+      <input value={text} onChange={e => setText(e.target.value)} />
+      <button onClick={handleAddClick}>
+        Add
+      </button>
+      <ul>
+        {visibleTodos.map(todo => (
+          <li key={todo.id}>
+            {todo.completed ? <s>{todo.text}</s> : todo.text}
+          </li>
+        ))}
+      </ul>
+    </>
+  );
+}
+```
+
+With this change, `getVisibleTodos()` will be called only if `todos` or `showActive` change. Typing into the input only changes the `text` state variable, so it does not trigger a call to `getVisibleTodos()`.
+
+There is also another solution which does not need `useMemo`. Since the `text` state variable can't possibly affect the list of todos, you can extract the `NewTodo` form into a separate component, and move the `text` state variable inside of it:
+
+```javascript
+import { useState, useMemo } from 'react';
+import { initialTodos, createTodo, getVisibleTodos } from './todos.js';
+
+export default function TodoList() {
+  const [todos, setTodos] = useState(initialTodos);
+  const [showActive, setShowActive] = useState(false);
+  const visibleTodos = getVisibleTodos(todos, showActive);
+
+  return (
+    <>
+      <label>
+        <input
+          type="checkbox"
+          checked={showActive}
+          onChange={e => setShowActive(e.target.checked)}
+        />
+        Show only active todos
+      </label>
+      <NewTodo onAdd={newTodo => setTodos([...todos, newTodo])} />
+      <ul>
+        {visibleTodos.map(todo => (
+          <li key={todo.id}>
+            {todo.completed ? <s>{todo.text}</s> : todo.text}
+          </li>
+        ))}
+      </ul>
+    </>
+  );
+}
+
+function NewTodo({ onAdd }) {
+  const [text, setText] = useState('');
+
+  function handleAddClick() {
+    setText('');
+    onAdd(createTodo(text));
+  }
+
+  return (
+    <>
+      <input value={text} onChange={e => setText(e.target.value)} />
+      <button onClick={handleAddClick}>
+        Add
+      </button>
+    </>
+  );
+}
+```
+
+This approach satisfies the requirements too. When you type into the input, only the `text` state variable updates. Since the `text` state variable is in the child `NewTodo` component, the parent `TodoList` component won't get re-rendered. This is why `getVisibleTodos()` doesn't get called when you type. (It would still be called if the `TodoList` re-renders for another reason.)
+
+## Challenge 3 of 4:
+
+Split the `EditContact` component in two. Move all the form state into
+the inner `Editform` component. Export the outer `EditContact`
+component, and make it pass `savedContact.id` as the `key` to the inner
+`EditContact` component. As a result, the inner `EditForm` component
+resets all of the form state and recreates the DOM whenever you select a
+different contact.
+
+```javascript
+import { useState, useEffect } from 'react';
+
+export default function EditContact({ ...props }) {
+  return <EditForm {...props} key={props.savedContact.id} />
+}
+
+function EditForm({ savedContact, onSave }) {
+  const [name, setName] = useState(savedContact.name);
+  const [email, setEmail] = useState(savedContact.email);
+
+  useEffect(() => {
+    setName(savedContact.name);
+    setEmail(savedContact.email);
+  }, [savedContact]);
+
+  return (
+    <section>
+      <label>
+        Name:{' '}
+        <input
+          type="text"
+          value={name}
+          onChange={e => setName(e.target.value)}
+        />
+      </label>
+      <label>
+        Email:{' '}
+        <input
+          type="email"
+          value={email}
+          onChange={e => setEmail(e.target.value)}
+        />
+      </label>
+      <button onClick={() => {
+        const updatedData = {
+          id: savedContact.id,
+          name: name,
+          email: email
+        };
+        onSave(updatedData);
+      }}>
+        Save
+      </button>
+      <button onClick={() => {
+        setName(savedContact.name);
+        setEmail(savedContact.email);
+      }}>
+        Reset
+      </button>
+    </section>
+  );
+}
+```
+
+## Challenge 4 of 4:
+
+The `showForm` state variable determines whether to show the form or the
+"Thank you" dialog. However, you aren't sending the message because the
+"Thank you" dialog was displayed. You want to send the message because
+the user has submitted the form. Delete the misleading Effect and move
+the `sendMessage` call inside the `handleSubmit` event handler:
+
+```javascript
+import { useState, useEffect } from 'react';
+
+export default function Form() {
+  const [showForm, setShowForm] = useState(false);
+  const [message, setMessage] = useState('');
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    setShowForm(false);
+    sendMessage(message);
+  }
+
+  if (!showForm) {
+    return (
+      <>
+        <h1>Thanks for using our services!</h1>
+        <button onClick={() => {
+          setMessage('');
+          setShowForm(true);
+        }}>
+          Open chat
+        </button>
+      </>
+    );
+  }
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <textarea
+        placeholder="Message"
+        value={message}
+        onChange={e => setMessage(e.target.value)}
+      />
+      <button type="submit" disabled={message === ''}>
+        Send
+      </button>
+    </form>
+  );
+}
+
+function sendMessage(message) {
+  console.log('Sending message: ' + message);
+}
+```
+
+Notice how in this version, only submitting the form (which is an event)
+causes the message to be sent. It works equally well regardless of
+whether `showForm` is initially set to `true` or `false`. (Set it to
+`false` and notice no extra console messages.)
+
 
