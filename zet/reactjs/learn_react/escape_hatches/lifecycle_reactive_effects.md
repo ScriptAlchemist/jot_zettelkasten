@@ -698,3 +698,579 @@ can't be a dependency. The ref object returned by `useRef` itself can
 > As you'll learn below on this page, a linter will check for these
 issues automatically
 
+## React verifies that you specified every reactive value as a dependency
+
+If your linter is configured for React, it will check that every
+value used by your Effect's code is declared as its dependency. For
+example, this is a lint error because both `roomId` and `serverUrl` are
+reactive:
+
+`chat.js`:
+
+```javascript
+export default function createConnection({ serverUrl, roomId }) {
+  return {
+    connect() {
+      console.log(`✅ Connecting to "${roomId}" room at
+      ${serverUrl}...`);
+    },
+    disconnect() {
+      console.log(`❌ Disconnected from "${roomId}" room at
+      ${serverUrl}`);
+    }
+  };
+}
+```
+
+`App.js`:
+
+```javascript
+import { createConnection } from './chat.js';
+
+function ChatRoom({ roomId }) { // roomId is reactive
+  const [serverUrl, setServerUrl] =
+  useState('https://localhost:1234'); // serverUrl is reactive
+
+  useEffect(() => {
+    const connection = createConnection(serverUrl, roomId);
+    connection.connect();
+    return () => connection.disconnect();
+  }, []); // <-- something's wrong here!
+
+  return (
+    <>
+      <label>
+        Server URL:{' '}
+        <input
+          value={serverUrl}
+          onChange={e => setServerUrl(e.target.value)}
+        />
+      </label>
+      <h1>Welcome to the {roomId} room!</h1>
+    </>
+  );
+}
+
+export default function App() {
+  const [roomId, setRoomId] = useState('general');
+  return (
+    <>
+      <label>
+        Choose the chat room:{' '}
+        <select
+          value={roomId}
+          onChange={e => setRoomId(e.target.value)}
+        >
+          <option value="general">general</option>
+          <option value="travel">travel</option>
+          <option value="music">music</option>
+        </select>
+      </label>
+      <hr />
+      <ChatRoom roomId={roomId} />
+    </>
+  );
+}
+```
+
+`Error`:
+
+```
+React Hook useEffect has missing dependencies: 'roomId' and
+'serverUrl'. Either include them or remove the dependency array.
+```
+
+This may look like a React error, but really React is pointing out a
+bug in your code. Both `roomId` and `serverUrl` may change over time,
+but you're forgetting to re-synchronize your Effect when they change.
+As a result, you will remain connected to the initial `roomId` and
+`serverUrl` every after the user picks different value in the UI.
+
+To fix this bug, follow the linter's suggestion to specify `roomId` and
+`serverUrl` as dependencies of your Effect:
+
+```javascript
+function ChatRoom({ roomId, serverUrl }) {
+  const {serverUrl, setServerUrl] = useState('https://localhost:1234');
+  useEffect(() => {
+    const connection = createConnection(serverUrl, roomId);
+    connection.connect();
+    return () => {
+      connection.disconnect();
+    };
+  },
+  [serverUrl, roomId]); // ✅ Alldependencies declared
+  // ..
+}
+```
+
+Try this fix in the sandbox above. Verify that the linter error is gone,
+and that the chat re-connects when needed.
+
+> #### Note
+>
+> In some cases, React knows that a value never changes even though it's
+> declared inside the component. For example, the `set` function returned
+> from `useState` and the ref object returned by `useRef` are stable--they
+> are guaranteed to not change on a re-render. Stable values aren't
+> reactive, so the linter lets you omit them from the list. However,
+> including them is allowed: they won't change, so it doesn't matter.
+
+## What to do when you don't want to re-synchronize
+
+In the previous example, you've fixed the lint error by listing `roomId`
+and `serverUrl` as dependencies.
+
+However, you could instead "prove" to the linter that these values
+aren't reactive values, i.e. that they can't change as a result of a
+re-render. For example, if `serverUrl` and `roomId` don't depend on
+rendering and always have the same values, you can move them outside the
+component. Now they don't need to be dependencies:
+
+```javascript
+const serverUrl = 'https://localhost:1234': // non reactive
+const roomId = 'general'; // non reactive
+
+function ChatRoom() {
+  useEffect(() => {
+    const connection = createConnection(serverUrl, roomId);
+    connection.connect();
+    return () => {
+      connection.disconnect();
+    };
+  }, []); // ✅ All dependencies declared
+  // ...
+}
+```
+
+You can also move them inside the Effect. They aren't calculated during
+rendering, so they're not reactive:
+
+```javascript
+function ChatRoom() {
+  useEffect(() => {
+    const serverUrl = 'https://localhost:1234';
+    const roomId = 'general';
+    const connection = createConnection(serverUrl, roomId);
+    connection.connect();
+    return () => {
+      connection.disconnect();
+    };
+  }, []); // ✅ All dependencies declared
+  // ...
+}
+```
+
+Effects are reactive block of code. They're re-synchronize when the
+values you read inside of them change. Unlike event handlers, which
+only run once per interaction, Effects run whenever synchronization is
+necessary.
+
+You can't "choose" your dependencies. Your dependencies must include
+every reactive value you react in the Effect. The linter enforces this.
+Sometimes this may lead to problems like infinite loops and to your
+Effect re-synchronizing too often. Don't fix these problems by
+suppressing the linter! Here's what to try instead:
+
+* Check that your Effect represents an independent synchronization
+  process. If your Effect doesn't synchronize anything, it might be
+  unnecessary. If it synchronizes several independent things, split it
+  up.
+* If you want to read the latest value of props or state without
+  "reacting" to it and re-synchronizing the Effect, you can split your
+  Effect into a reactive part (which you'll keep in the Effect) and a
+  non-reactive part (which you'll extract into something called an Event
+  function). Read more about separating Events from Effects.
+* Avoid relying on objects and functions as dependencies.If you create
+  objects and functions during rendering and then read them from an
+  Effect, they will be different on every render. This will cause your
+  Effect to re-synchronize every time. Read more about removing
+  unnecessary dependencies from your Effects.
+
+> #### Pitfall
+>
+> The linter is your friend, but its power are limited. The linter only
+> knows when the dependencies are wrong. It doesn't know the best way to
+> solve each case. If the linter suggests a dependency, but adding it
+> causes a loop, it doesn't mean the linter should be ignored. It means
+> you need to change the code inside (or outside) the Effect so that the
+> value isn't reactive and doesn't need to be dependency.
+>
+> If you have an existing codebase, you might have some Effects that
+> suppress the linter like this:
+
+```javascript
+useEffect(() => {
+  // ...
+  // :stop: Avoid suppressing the linter like this:
+  // elint-ignore-next-line react-hooks/exhaustive-dependencies
+}, []);
+```
+
+> On the next pages, you'll learn how to fix this code without breaking
+the rules. It's always worth fixing!
+
+## Recap
+
+* Components can mount, update, and unmount.
+* Each Effect has a separate lifecycle from the surrounding component.
+* Each Effect describes a separate synchronization process that can
+  start and stop.
+* When you write and read Effects, you should think from each
+  individual Effect's perspective (how to start and stop
+  synchronization) rather than from the component's perspective (how it
+  mounts, updates, or un-mounts).
+* Values declared inside the component body are "reactive"
+* Reactive values should re-synchronize the Effect because they can
+  change over time.
+* The linter verifies that all reactive values used inside the Effect
+  are specified as dependencies.
+* All errors flagged by the linter are legitimate. There's always a way
+  to fix the code that doesn't break the rules.
+
+# Challenges
+
+## Challenge 1 of 5: Fix reconnecting on every keystroke
+
+In this example, the `ChatRoom` component connects to the chat room when
+the component mounts, disconnects when it unmounts, and reconnects when
+you selects a different chat room. This behavior is correct, so you need
+to keep it working.
+
+However, there is a problem. Whenever you type into the message box
+input at the bottom, `ChatRoom` also reconnects to the chat. (You can
+notice this by clearing the console and typing into the input.) Fix the
+issue so that this doesn't happen.
+
+`chat.js`:
+
+```javascript
+export function createConnection(serverUrl, roomId) {
+  // A real implementation would actually connect to the server
+  return {
+    connect() {
+      console.log('✅ Connecting to "' + roomId + '" room at ' + serverUrl + '...');
+    },
+    disconnect() {
+      console.log('❌ Disconnected from "' + roomId + '" room at ' + serverUrl);
+    }
+  };
+}
+```
+
+`App.js`:
+
+```javascript
+import { useState, useEffect } from 'react';
+import { createConnection } from './chat.js';
+
+const serverUrl = 'https://localhost:1234';
+
+function ChatRoom({ roomId }) {
+  const [message, setMessage] = useState('');
+
+  useEffect(() => {
+    const connection = createConnection(serverUrl, roomId);
+    connection.connect();
+    return () => connection.disconnect();
+  });
+
+  return (
+    <>
+      <h1>Welcome to the {roomId} room!</h1>
+      <input
+        value={message}
+        onChange={e => setMessage(e.target.value)}
+      />
+    </>
+  );
+}
+
+export default function App() {
+  const [roomId, setRoomId] = useState('general');
+  return (
+    <>
+      <label>
+        Choose the chat room:{' '}
+        <select
+          value={roomId}
+          onChange={e => setRoomId(e.target.value)}
+        >
+          <option value="general">general</option>
+          <option value="travel">travel</option>
+          <option value="music">music</option>
+        </select>
+      </label>
+      <hr />
+      <ChatRoom roomId={roomId} />
+    </>
+  );
+}
+```
+
+## Challenge 2 of 5: Switch synchronization on and off
+
+In this example, an Effect subscribes to the window `pointermove` event to move a pink dot on the screen. Try hovering over the preview area (or touching the screen if you're on a mobile device), and see how the pink dot follows your movement.
+
+There is also a checkbox. Ticking the checkbox toggles the `canMove` state variable, but this state variable is not used anywhere in the code. Your task is to change the code so that when `canMove` is `false` (the checkbox is ticked off), the dot should stop moving. After you toggle the checkbox back on (and set `canMove` to `true`), to box should follow the movement again. In other words, whether the dot can move or not should stay synchronized to whether the checkbox is checked.
+
+```javascript
+import { useState, useEffect } from 'react';
+
+export default function App() {
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [canMove, setCanMove] = useState(true);
+
+  useEffect(() => {
+    function handleMove(e) {
+      setPosition({ x: e.clientX, y: e.clientY });
+    }
+    window.addEventListener('pointermove', handleMove);
+    return () => window.removeEventListener('pointermove', handleMove);
+  }, []);
+
+  return (
+    <>
+      <label>
+        <input type="checkbox"
+          checked={canMove}
+          onChange={e => setCanMove(e.target.checked)} 
+        />
+        The dot is allowed to move
+      </label>
+      <hr />
+      <div style={{
+        position: 'absolute',
+        backgroundColor: 'pink',
+        borderRadius: '50%',
+        opacity: 0.6,
+        transform: `translate(${position.x}px, ${position.y}px)`,
+        pointerEvents: 'none',
+        left: -20,
+        top: -20,
+        width: 40,
+        height: 40,
+      }} />
+    </>
+  );
+}
+```
+
+## Challenge 3 of 5: Investigate a stale value bug
+
+In this example, the pink dot should move when the checkbox is on, and should stop moving when the checkbox is off. The logic for this has already been implemented: the `handleMove` event handler checks the `canMove` state variable.
+
+However, for some reason, the `canMove` state variable inside `handleMove` appears to be "stale": it's always `true`, even after you tick off the checkbox. How is this possible? Find the mistake in the code and fix it.
+
+```javascript
+hort { useState, useEffect } from 'react';
+
+export default function App() {
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [canMove, setCanMove] = useState(true);
+
+  function handleMove(e) {
+    if (canMove) {
+      setPosition({ x: e.clientX, y: e.clientY });
+    }
+  }
+
+  useEffect(() => {
+    window.addEventListener('pointermove', handleMove);
+    return () => window.removeEventListener('pointermove', handleMove);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return (
+    <>
+      <label>
+        <input type="checkbox"
+          checked={canMove}
+          onChange={e => setCanMove(e.target.checked)} 
+        />
+        The dot is allowed to move
+      </label>
+      <hr />
+      <div style={{
+        position: 'absolute',
+        backgroundColor: 'pink',
+        borderRadius: '50%',
+        opacity: 0.6,
+        transform: `translate(${position.x}px, ${position.y}px)`,
+        pointerEvents: 'none',
+        left: -20,
+        top: -20,
+        width: 40,
+        height: 40,
+      }} />
+    </>
+  );
+}
+```
+
+## Challenge 4 of 5: Fix a connection switch
+
+In this example, the chat service in `chat.js` exposes two different APIs:
+`createEncryptedConnection` and `createUnencryptedConnection`. The root `App` component lets the user choose whether to use encryption or not, and then passes down the corresponding API method to the child `ChatRoom` component as the `createConnection` prop.
+
+Notice that initially, the console logs say the connection is not encrypted. Try toggling the checkbox on: nothing will happen. However, if you change the selected room after that, then the chat will reconnect and enable encryption (as you'll see from the console messages). This is a bug. Fix the bug so that toggling the checkbox also cases the chat to reconnect.
+
+`chat.js`:
+
+```javascript
+export function createEncryptedConnection(roomId) {
+  // A real implementation would actually connect to the server
+  return {
+    connect() {
+      console.log('✅ 🔐 Connecting to "' + roomId + '... (encrypted)');
+    },
+    disconnect() {
+      console.log('❌ 🔐 Disconnected from "' + roomId + '" room (encrypted)');
+    }
+  };
+}
+
+export function createUnencryptedConnection(roomId) {
+  // A real implementation would actually connect to the server
+  return {
+    connect() {
+      console.log('✅ Connecting to "' + roomId + '... (unencrypted)');
+    },
+    disconnect() {
+      console.log('❌ Disconnected from "' + roomId + '" room (unencrypted)');
+    }
+  };
+}
+```
+
+`ChatRoom.js`:
+
+```javascript
+eort { useState, useEffect } from 'react';
+
+export default function ChatRoom({ roomId, createConnection }) {
+  useEffect(() => {
+    const connection = createConnection(roomId);
+    connection.connect();
+    return () => connection.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [roomId]);
+
+  return <h1>Welcome to the {roomId} room!</h1>;
+}
+```
+
+`App.js`:
+
+```javascript
+import { useState } from 'react';
+import ChatRoom from './ChatRoom.js';
+import {
+  createEncryptedConnection,
+  createUnencryptedConnection,
+} from './chat.js';
+
+export default function App() {
+  const [roomId, setRoomId] = useState('general');
+  const [isEncrypted, setIsEncrypted] = useState(false);
+  return (
+    <>
+      <label>
+        Choose the chat room:{' '}
+        <select
+          value={roomId}
+          onChange={e => setRoomId(e.target.value)}
+        >
+          <option value="general">general</option>
+          <option value="travel">travel</option>
+          <option value="music">music</option>
+        </select>
+      </label>
+      <label>
+        <input
+          type="checkbox"
+          checked={isEncrypted}
+          onChange={e => setIsEncrypted(e.target.checked)}
+        />
+        Enable encryption
+      </label>
+      <hr />
+      <ChatRoom
+        roomId={roomId}
+        createConnection={isEncrypted ?
+          createEncryptedConnection :
+          createUnencryptedConnection
+        }
+      />
+    </>
+  );
+}
+```
+
+## Challenge 5 of 5: Populate a chain of select boxes
+
+In this example, there are two select boxes. One select box lets the user pick a planet. Another select box lets the user pick a place on that planet. The second box doesn't work yet. Your task is to make it show the places on the chose planet.
+
+Look at how the first select box works. It populates the `planetList` state with the result from the `/planets` API call. The currently selected planet's ID is kept in the `planetId` state variable. You need to find where to add some additional code so that the `placeList` state variable is populated with the result of the `"/planets" + planetId + "/places"` API call.
+
+If you implement this right, selecting a planet should populate the place list. Changing a planet should change the place list.
+
+```javascript
+iort { useState, useEffect } from 'react';
+import { fetchData } from './api.js';
+
+export default function Page() {
+  const [planetList, setPlanetList] = useState([])
+  const [planetId, setPlanetId] = useState('');
+
+  const [placeList, setPlaceList] = useState([]);
+  const [placeId, setPlaceId] = useState('');
+
+  useEffect(() => {
+    let ignore = false;
+    fetchData('/planets').then(result => {
+      if (!ignore) {
+        console.log('Fetched a list of planets.');
+        setPlanetList(result);
+        setPlanetId(result[0].id); // Select the first planet
+      }
+    });
+    return () => {
+      ignore = true;
+    }
+  }, []);
+
+  return (
+    <>
+      <label>
+        Pick a planet:{' '}
+        <select value={planetId} onChange={e => {
+          setPlanetId(e.target.value);
+        }}>
+          {planetList.map(planet =>
+            <option key={planet.id} value={planet.id}>{planet.name}</option>
+          )}
+        </select>
+      </label>
+      <label>
+        Pick a place:{' '}
+        <select value={placeId} onChange={e => {
+          setPlaceId(e.target.value);
+        }}>
+          {placeList.map(place =>
+            <option key={place.id} value={place.id}>{place.name}</option>
+          )}
+        </select>
+      </label>
+      <hr />
+      <p>You are going to: {placeId || '???'} on {planetId || '???'} </p>
+    </>
+  );
+}
+```
+
+# Solutions
+
+## Challenge 1 of 5:
+
+
