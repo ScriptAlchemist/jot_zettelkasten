@@ -1063,7 +1063,7 @@ In this example, the pink dot should move when the checkbox is on, and should st
 However, for some reason, the `canMove` state variable inside `handleMove` appears to be "stale": it's always `true`, even after you tick off the checkbox. How is this possible? Find the mistake in the code and fix it.
 
 ```javascript
-hort { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function App() {
   const [position, setPosition] = useState({ x: 0, y: 0 });
@@ -1146,7 +1146,7 @@ export function createUnencryptedConnection(roomId) {
 `ChatRoom.js`:
 
 ```javascript
-eort { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function ChatRoom({ roomId, createConnection }) {
   useEffect(() => {
@@ -1216,7 +1216,7 @@ Look at how the first select box works. It populates the `planetList` state with
 If you implement this right, selecting a planet should populate the place list. Changing a planet should change the place list.
 
 ```javascript
-iort { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { fetchData } from './api.js';
 
 export default function Page() {
@@ -1272,5 +1272,57 @@ export default function Page() {
 # Solutions
 
 ## Challenge 1 of 5:
+
+This Effect didn't have a dependency array at all, so it re-synchronized after every re-render. First, add the dependency array. Then, make sure that every reactive value used by the Effect is specified in the array. For example, `roomId` is reactive (because it's a prop), so it should be included in the array. This ensures that when the user selects a different room, the chat reconnect. On the other hand, `serverUrl` is defined outside the component. This is why it doesn't need to be in the array.
+
+```javascript
+import { useState, useEffect } from 'react';
+import { createConnection } from './chat.js';
+
+const serverUrl = 'https://localhost:1234';
+
+function ChatRoom({ roomId }) {
+  const [message, setMessage] = useState('');
+
+  useEffect(() => {
+    const connection = createConnection(serverUrl, roomId);
+    connection.connect();
+    return () => connection.disconnect();
+  }, [roomId]);
+
+  return (
+    <>
+      <h1>Welcome to the {roomId} room!</h1>
+      <input
+        value={message}
+        onChange={e => setMessage(e.target.value)}
+      />
+    </>
+  );
+}
+
+export default function App() {
+  const [roomId, setRoomId] = useState('general');
+  return (
+    <>
+      <label>
+        Choose the chat room:{' '}
+        <select
+          value={roomId}
+          onChange={e => setRoomId(e.target.value)}
+        >
+          <option value="general">general</option>
+          <option value="travel">travel</option>
+          <option value="music">music</option>
+        </select>
+      </label>
+      <hr />
+      <ChatRoom roomId={roomId} />
+    </>
+  );
+}
+```
+
+## Challenge 2 of 5:
 
 
