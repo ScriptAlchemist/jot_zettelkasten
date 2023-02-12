@@ -1614,4 +1614,175 @@ In this version, the `App` component passes a boolean prop instead of a function
 
 ## Challenge 5 of 5:
 
+There are two independent synchronization processes:
+
+* The first select box is synchronized to the remote list of planets.
+* The second select box is synchronized to the remote list of places for
+  the current `planetId`.
+
+This is why it makes sense to describe them as two separate Effects.
+Here's an example of how you could do this.
+
+```javascript
+import { useState, useEffect } from 'react';
+import { fetchData } from './api.js';
+
+export default function Page() {
+  const [planetList, setPlanetList] = useState([])
+  const [planetId, setPlanetId] = useState('');
+
+  const [placeList, setPlaceList] = useState([]);
+  const [placeId, setPlaceId] = useState('');
+
+  useEffect(() => {
+    let ignore = false;
+    fetchData('/planets').then(result => {
+      if (!ignore) {
+        console.log('Fetched a list of planets.');
+        setPlanetList(result);
+        setPlanetId(result[0].id); // Select the first planet
+      }
+    });
+    return () => {
+      ignore = true;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (planetId === '') {
+      // Nothing is selected in the first box yet
+      return;
+    }
+
+    let ignore = false;
+    fetchData('/planets/' + planetId + '/places').then(result => {
+      if (!ignore) {
+        console.log('Fetched a list of places on "' + planetId + '".');
+        setPlaceList(result);
+        setPlaceId(result[0].id); // Select the first place
+      }
+    });
+    return () => {
+      ignore = true;
+    }
+  }, [planetId]);
+
+  return (
+    <>
+      <label>
+        Pick a planet:{' '}
+        <select value={planetId} onChange={e => {
+          setPlanetId(e.target.value);
+        }}>
+          {planetList.map(planet =>
+            <option key={planet.id} value={planet.id}>{planet.name}</option>
+          )}
+        </select>
+      </label>
+      <label>
+        Pick a place:{' '}
+        <select value={placeId} onChange={e => {
+          setPlaceId(e.target.value);
+        }}>
+          {placeList.map(place =>
+            <option key={place.id} value={place.id}>{place.name}</option>
+          )}
+        </select>
+      </label>
+      <hr />
+      <p>You are going to: {placeId || '???'} on {planetId || '???'} </p>
+    </>
+  );
+}
+```
+
+This code is a bit repetitive. However, that's not a good reason to combine it into a single Effect! If you did this, you'd have a combine both Effect's dependencies into one list, and then changing the planet would re-fetch the list of all planets. Effects are not a tool for code reuse.
+
+Instead, to reduce repetition, you can extract some logic into a custom Hook like `useSelectOption` below:
+
+`App.js`:
+
+```javascript
+import { useState } from 'react';
+import { useSelectOptions } from './useSelectOptions.js';
+
+export default function Page() {
+  const [
+    planetList,
+    planetId,
+    setPlanetId
+  ] = useSelectOptions('planets');
+
+  const [
+    placeList,
+    placeId,
+    setPlaceId
+  ] = useSelectOptions(planetId ? `/planets/${planetId}/places` : null);
+
+  return (
+    <>
+      <label
+        Pick a planet:{' '}
+        <select value={planetId} onChange={e => {
+          setPlanetId(e.target.value);
+        }}>
+          {planetList?.map(planet =>
+            <option key={planet.id}
+            value={planet.id}>{planet.name}</option>
+          )}
+        </select>
+      </label>
+      <label>
+        Pick a place:{' '}
+        <select value={placeId} onChange={e => {
+          setPlaceId(e.target.value);
+        }}>
+          {placeList?.map(place =>
+            <option key={place.id}
+            value={place.id}>{place.name}</option>
+          )}
+        </select>
+      </label>
+      <hr />
+      <p>You are going to: {placeId || '...'} on {planetId || '...'}
+      </p>
+    </>
+  );
+}
+```
+
+`useSelectOptions.js`:
+
+```javascript
+import { useState, useEffect } from 'react';
+import { fetchData } from './api.js';
+
+export function useSelectOptions(url) {
+  const [list, setList] useState(null);
+  const [selectedId, setSelectedId] = useState('');
+  useEffect(() => {
+    if (url === null) return;
+
+    let ignore = false;
+    fetchData(url).then(result => {
+      if(!ignore) {
+        setList(result);
+        setSelectedId(result[0].id);
+      }
+    });
+    return () => {
+      ignore = true;
+    }
+  }, [url]);
+  return [list, selectedId, setSelectedId];
+}
+```
+
+Check the `useSelectOptions.js` tab in the sandbox to see how it works.
+Ideally, most Effects in your application should eventually be replaced
+by custom Hooks, whether written by you or by the community. Custom
+Hooks hide the synchronization logic, so the calling component doesn't
+know about the Effect. As you keep working on your app, you'll develop a
+pallette of Hooks to choose from, and eventually you won't need to write
+Effects in your component very often.
 
