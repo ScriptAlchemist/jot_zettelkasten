@@ -13,4 +13,4 @@ will teach you how to do that.
 > * Why Effects are reactive, and event handlers are not
 > * What to do when you want a part of your Effect's code to not be
     reactive
-> * 
+> * What Effect Events are, and how to extract them from your Effects.

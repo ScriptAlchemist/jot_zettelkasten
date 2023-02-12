@@ -306,9 +306,7 @@ arrays.
 
 ## Can this be optimized more?
 
-
-
-
-
-
-
+Probably. The thing is there might be a library that exists like
+`deep-equals` or `Lodash` that have methods that can handle edge cases.
+It's best to dig into other code and read it directly. There could be an
+extension of this topic later on. Talking about that code.
