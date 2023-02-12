@@ -1325,4 +1325,293 @@ export default function App() {
 
 ## Challenge 2 of 5:
 
+One solution is to wrap the `setPosition` call into an `if (canMove) {...}` condition:
+
+```javascript
+import { useState, useEffect } from 'react';
+
+export default function App() {
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [canMove, setCanMove] = useState(true);
+
+  useEffect(() => {
+    function handleMove(e) {
+      if (canMove) {
+        setPosition({ x: e.clientX, y: e.clientY });
+      }
+    }
+    window.addEventListener('pointermove', handleMove);
+    return () => window.removeEventListener('pointermove', handleMove);
+  }, [canMove]);
+
+  return (
+    <>
+      <label>
+        <input type="checkbox"
+          checked={canMove}
+          onChange={e => setCanMove(e.target.checked)} 
+        />
+        The dot is allowed to move
+      </label>
+      <hr />
+      <div style={{
+        position: 'absolute',
+        backgroundColor: 'pink',
+        borderRadius: '50%',
+        opacity: 0.6,
+        transform: `translate(${position.x}px, ${position.y}px)`,
+        pointerEvents: 'none',
+        left: -20,
+        top: -20,
+        width: 40,
+        height: 40,
+      }} />
+    </>
+  );
+}
+```
+
+Alternatively, you could wrap the event subscription logic into an `if (canMove) {...}` condition:
+
+```javascript
+import { useState, useEffect } from 'react';
+
+export default function App() {
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [canMove, setCanMove] = useState(true);
+
+  useEffect(() => {
+    function handleMove(e) {
+      setPosition({ x: e.clientX, y: e.clientY });
+    }
+    if (canMove) {
+      window.addEventListener('pointermove', handleMove);
+      return () => window.removeEventListener('pointermove', handleMove);
+    }
+  }, [canMove]);
+
+  return (
+    <>
+      <label>
+        <input type="checkbox"
+          checked={canMove}
+          onChange={e => setCanMove(e.target.checked)} 
+        />
+        The dot is allowed to move
+      </label>
+      <hr />
+      <div style={{
+        position: 'absolute',
+        backgroundColor: 'pink',
+        borderRadius: '50%',
+        opacity: 0.6,
+        transform: `translate(${position.x}px, ${position.y}px)`,
+        pointerEvents: 'none',
+        left: -20,
+        top: -20,
+        width: 40,
+        height: 40,
+      }} />
+    </>
+  );
+}
+```
+
+In both of these cases, `canMove` is a reactive variable that you read inside the Effect. This is why it must be specified in the list of Effect dependencies. This ensures that the Effect re-synchronizes after every change to its value.
+
+## Challenge 3 of 5:
+
+The problem with the original code was suppressing the dependency linter. If you remove the suppression, you'll see that his Effect depends on the `handleMove` function. This makes sense: `handleMove` is declared inside the component body, which makes it a reactive value. Every reactive value must be specified as a dependency, or it can potentially get stale over time!
+
+The author of the original code has "lied" to React by saying that the Effect does not depend (`[]`) on any reactive values. This is why React did not re-synchronize the Effect after `canMove` has changed (and `handleMove` with it). Because React did not re-synchronize the Effect, the `handleMove` attached as a listener is the `handleMove` function created during the initial render. During the initial render, `canMove` was `true`, which is why `handleMove` from the initial render will forever see that value.
+
+If you never suppress the linter, you will never see problems with state values. There are a few different ways to solve this bug, but you should always start by removing the linter suppression. Then change the code to fix the lint error.
+
+You can change the Effect dependencies to `[handleMove]`, but since its' going to be a newly defined function for every render, you might as well remove the dependencies array altogether. Then the Effect will re-synchronize after every re-render:
+
+```javascript
+import { useState, useEffect } from 'react';
+
+export default function App() {
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [canMove, setCanMove] = useState(true);
+
+  function handleMove(e) {
+    if (canMove) {
+      setPosition({ x: e.clientX, y: e.clientY });
+    }
+  }
+
+  useEffect(() => {
+    window.addEventListener('pointermove', handleMove);
+    return () => window.removeEventListener('pointermove', handleMove);
+  });
+
+  return (
+    <>
+      <label>
+        <input type="checkbox"
+          checked={canMove}
+          onChange={e => setCanMove(e.target.checked)} 
+        />
+        The dot is allowed to move
+      </label>
+      <hr />
+      <div style={{
+        position: 'absolute',
+        backgroundColor: 'pink',
+        borderRadius: '50%',
+        opacity: 0.6,
+        transform: `translate(${position.x}px, ${position.y}px)`,
+        pointerEvents: 'none',
+        left: -20,
+        top: -20,
+        width: 40,
+        height: 40,
+      }} />
+    </>
+  );
+}
+```
+
+This solution works but it's not ideal. If you put `console.log('Resubscribing')` inside the Effect, you'll notice that it resubscribes after every re-render. Resubscribing is fast, but it would still be nice to avoid doing it so often.
+
+A better fix would be to move the `handleMove` function inside the Effect. Then `handleMove` won't be a reactive value, and so your Effect won't depend on a function. Instead, it will need to depend on `canMove` which your code now reads from inside the Effect. This matches the behavior you wanted, since your Effect will now stay synchronized with the value of `canMove`:
+
+```javascript
+import { useState, useEffect } from 'react';
+
+export default function App() {
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [canMove, setCanMove] = useState(true);
+
+  useEffect(() => {
+    function handleMove(e) {
+      if (canMove) {
+        setPosition({ x: e.clientX, y: e.clientY });
+      }
+    }
+
+    window.addEventListener('pointermove', handleMove);
+    return () => window.removeEventListener('pointermove', handleMove);
+  }, [canMove]);
+
+  return (
+    <>
+      <label>
+        <input type="checkbox"
+          checked={canMove}
+          onChange={e => setCanMove(e.target.checked)} 
+        />
+        The dot is allowed to move
+      </label>
+      <hr />
+      <div style={{
+        position: 'absolute',
+        backgroundColor: 'pink',
+        borderRadius: '50%',
+        opacity: 0.6,
+        transform: `translate(${position.x}px, ${position.y}px)`,
+        pointerEvents: 'none',
+        left: -20,
+        top: -20,
+        width: 40,
+        height: 40,
+      }} />
+    </>
+  );
+}
+```
+
+Try adding `console.log('Resubscribing')` inside the Effect body and notice that now it only resubscribes when you toggle the checkbox (`canMove` changes) or edit the code. This makes it better than the previous approach that always resubscribed.
+
+You'll learn a more general approach to this type of problem in Separating Events from Effects.
+
+## Challenge 4 of 5:
+
+If you remove the linter suppression, you will see linter error. The problem is that `createConnection` is a prop, so it's reactive value. It can change over time! (And indeed, it should--when the user ticks the checkbox, the parent component passes a different value of the `createConnection` prop.) This is why is should be a dependency. Include it in the list to fix the bug:
+
+```javascript
+import { useState, useEffect } from 'react';
+
+export default function ChatRoom({ roomId, createConnection }) {
+  useEffect(() => {
+    const connection = createConnection(roomId);
+    connection.connect();
+    return () => connection.disconnect();
+  }, [roomId, createConnection]);
+
+  return <h1>Welcome to the {roomId} room!</h1>;
+}
+```
+
+It is correct that `createConnection` is a dependency. However, this code is a bit fragile because someone could edit the `App` component to pass an inline function as the value of this prop. In that case, its value would be different every time the `App` component re-renders, so the Effect might re-synchronize too often. To avoid this, you can pass `isEncrypted` down instead:
+
+`ChatRoom.js`:
+
+```javascript
+import { useState, useEffect } from 'react';
+import {
+  createEncryptedConnection,
+  createUnencryptedConnection,
+} from './chat.js';
+
+export default function ChatRoom({ roomId, isEncrypted }) {
+  useEffect(() => {
+    const createConnection = isEncrypted ?
+      createEncryptedConnection :
+      createUnencryptedConnection;
+    const connection = createConnection(roomId);
+    connection.connect();
+    return () => connection.disconnect();
+  }, [roomId, isEncrypted]);
+
+  return <h1>Welcome to the {roomId} room!</h1>;
+}
+```
+
+`App.js`
+
+```javascript
+import { useState } from 'react';
+import ChatRoom from './ChatRoom.js';
+
+export default function App() {
+  const [roomId, setRoomId] = useState('general');
+  const [isEncrypted, setIsEncrypted] = useState(false);
+  return (
+    <>
+      <label>
+        Choose the chat room:{' '}
+        <select
+          value={roomId}
+          onChange={e => setRoomId(e.target.value)}
+        >
+          <option value="general">general</option>
+          <option value="travel">travel</option>
+          <option value="music">music</option>
+        </select>
+      </label>
+      <label>
+        <input
+          type="checkbox"
+          checked={isEncrypted}
+          onChange={e => setIsEncrypted(e.target.checked)}
+        />
+        Enable encryption
+      </label>
+      <hr />
+      <ChatRoom
+        roomId={roomId}
+        isEncrypted={isEncrypted}
+      />
+    </>
+  );
+}
+```
+
+In this version, the `App` component passes a boolean prop instead of a function. Inside the Effect, you decide which function to use. Since both `createEncryptedConnection` and `createUnencryptedConnection` are declared outside the component, they aren't reactive, and don't need to be dependencies. You'll learn more about this in Removing Effect Dependencies.
+
+## Challenge 5 of 5:
+
 
