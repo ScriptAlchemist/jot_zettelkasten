@@ -635,7 +635,7 @@ function Page({ url }) {
 }
 ```
 
-Now lets' say you want to include the number of items in the shopping
+Now let's say you want to include the number of items in the shopping
 cart together with every page visit:
 
 ```javascript
@@ -650,3 +650,81 @@ function Page({ url }) {
   // ...
 }
 ```
+
+You used `numberOfItems` inside the Effect, so the linter asks you to
+add it as a dependency. However, you don't want the `logVisit` call to
+be reactive with respect to `numberOfItems`. If the user puts something
+into the shopping cart, and the `numberOfItems` changes, this does not
+mean that the user visited the page again. In other words, visiting the
+page feels similar to an event. You want to be very precise about when
+you say it's happened.
+
+Split the code into two parts:
+
+```javascript
+function Page({ url }) {
+  const { items } = useContext(ShoppingCartContext);
+  const numberOfItems = items.length;
+
+  const onVisit = useEffectEvent(visitedUrl => {
+    logVisit(visitedUrl, numberOfItems);
+  });
+
+  useEffect(() => {
+    onVisit(url);
+  }, [url]); // ✅ All dependencies declared
+  // ...
+}
+```
+
+Here, `onVisit` is an Effect Event. The code inside it isn't reactive.
+This is why you can use `numberOfItems` (or any other reactive value!)
+without worrying that it will cause the surrounding code to re-execute
+on changes.
+
+On the other hand, the Effect itself remains reactive. Code inside the
+Effect uses the `url` prop, so the Effect will re-run after every
+re-render with a different `url`. This, in turn will call the `onVisit`
+Effect Event.
+
+As a result, you will call `logVisit` for every change to the `url`, and
+always ready the latest `numberOfItems`. However, if `numberOfItems`
+changes on its own, this will not cause any of the code to re-run.
+
+> #### Note
+> You might be wondering if you could call `onVisit()` with no
+arguments, an dread the `url` inside it:
+
+```javascript
+const onVisit = useEffectEvent(() => {
+  logVisit(url, numberOfItems);
+});
+
+useEffect(() => {
+  onVisit();
+}, [url]);
+```
+
+> This would work, but it's better to pass this `url` to the Effect
+> Event explicitly. By passing `url` as an argument to your Effect Event,
+> you are saying that visiting a page with a different `url` constitutes a
+> separate "event" from the user's perspective. The `visitUrl` is a part
+> of the "event" that happened:
+
+```javascript
+const onVisit = useEffectEvent(visitedUrl => {
+  logVisit(visitedUrl, numberOfItems);
+});
+
+useEffect(() => {
+  onVisit(url);
+}, [url]);
+```
+
+> Since your Effect Event explicitly "asks" for the `visitedUrl`, now
+you can't accidentally remove `url` from the Effect's dependencies. If
+you remove the `url` dependency (causing distinct page visits to be
+counted as one), the linter will warn you about it. You want `onVisit`
+to be reactive with regards to the `url`, to instead of reading the
+`url` inside (where it wouldn't be reactive), you pass it from your
+Effect.
