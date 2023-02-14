@@ -98,4 +98,192 @@ accessibility.
 
 ## Let's get to some code
 
+### Login Form
+
+```html
+<form>
+  <label for="username">Username</label>
+  <input
+    type="text"
+    id="username"
+    required
+    aria-describedby="username-desc"
+  />
+  <div id="username-desc">Please enter your username.</div>
+
+  <label for="password">Password</label>
+  <input
+    type="password"
+    id="password"
+    required
+    aria-describedby="password-desc"
+  />
+  <div id="password-desc">Please enter your password.</div>
+  <button type="submit">Sign In</button>
+</form>
+
+<a href="#" aria-label="Forget your password?">Forget your password?</a>
+```
+
+#### What's happening in this example?
+
+* Each for field has a label that is associated with the input using the
+  `for` attribute. This ensures that the label is read aloud by screen
+  readers when the input receives focus.
+* The `aria-describedby` attribute is used to associate a descriptive
+  message with each input field. This message provides additional
+  information or instructions for the user and is read aloud by the
+  screen readers when the input receives focus.
+* The `required` attribute is used to indicate that both the username
+  and password fields are required to be filled in.
+* The `button` element is used to create the "Sign In" button, which is
+  associated with the form using the `type="submit"` attribute.
+* The "Forget your password?" link is provided as an anchor element
+  (`<a>`) with and `aria-label` attribute to make it accessible to users
+  who cannot see the text on the link.
+
+This example is just one way to make a login and forget password button
+for accessible. It's important to keep in mind that accessibility is an
+ongoing process, and there may be additional steps you can take to make
+your forms more accessible.
+
+### That can't be all that we need to worry about
+
+It's not there are several additional steps you can take to make your
+login and forget password forms even more accessible. Here are some
+examples:
+
+* `Use ARIA roles`: ARIA roles can help to provide additional information
+  about the purpose and functionality of form elements. For example, you
+  can use the `role="button"` attribute on the "Forgot your password?"
+  link to indicate that it behaves like a button.
+* `Use proper focus management`: Proper focus management is important for
+  ensuring that users can navigate your form using the keyboard. This
+  means that focus should be moved to the appropriate element when the
+  user interacts with the form, and that the order of the focus should
+  follow a logical sequence.
+* `Provide clear error messages`: When a user enters incorrect information
+  in a form field, it's important to provide a clear and descriptive
+  error message that explains what went wrong and how to fix it. The
+  error message should be associated with the form field using the
+  `aria-describeby` attribute, and should be read aloud by screen
+  readers.
+* `Provide visual feedback`: Users with visual impairments may not be
+  able to see changes in the visual appearances of a form field when it
+  receives focus. Providing additional visual feedback, such as
+  highlighting the focusing element or changing its border, can help to
+  ensure the user can see the changes when they interact with the form.
+* `Text with assistive technology`: Finally, it's important to test your
+  forms using assistive technology such as screen readers, magnifiers,
+  and voice recognition software. This can help you to identify any
+  issues that may be preventing users with disabilities from accessing
+  and interacting with your forms.
+
+## Full Blown Example
+
+I want to build a large form using as many of the elements. Making is
+basic accessible.
+
+* `<button>`
+* `<datalist>`
+* `<fieldset>`
+* `<input>`
+* `<label>`
+* `<legend>`
+* `<meter>`
+* `<optgroup>`
+* `<option>`
+* `<progress>`
+* `<select>`
+* `<textarea>`
+
+```html
+<form>
+  <fieldset>
+    <legend>Personal Information</legend>
+    <label for="name">Name:</label>
+    <input type="text" id="name" name="name" required aria-required="true">
+    <br>
+    <label for="email">Email:</label>
+    <input type="email" id="email" name="email" required aria-required="true">
+    <br>
+    <label for="phone">Phone:</label>
+    <input type="tel" id="phone" name="phone" required aria-required="true">
+    <br>
+    <label for="birthdate">Birthdate:</label>
+    <input type="date" id="birthdate" name="birthdate" required aria-required="true>
+  </fieldset>
+  <br>
+  <fieldset>
+    <legend>Account Information</legend>
+    <label for="username">Username:</label>
+    <input type="text" id="username" name="username" required aria-required="true">
+    <br>
+    <label for="password">Password:</label>
+    <input type="password" id="password" name="password" required aria-required="true" minlength="8">
+    <br>
+    <label for="confirm-password">Confirm Password:</label>
+    <input type="confirm-password" id="confirm-password" name="confirm-password" required aria-required="true" minlength="8">
+    <br>
+    <label for="security-answer">Security Answer:</label>
+    <input type="text" id="security-answer" name="security-answer" required aria-required="true">
+    <br>
+    <label for=remember-me">Remember Me:</label>
+    <input type="checkbox" id="remember-me" name="remember-me">
+    <br>
+    <label for="newsletter">Subscribe to Newsletter:</label>
+    <input type="checkbox" id="newsletter" name="newsletter">
+    <br>
+    <label for="plan">Select a Plan:</label>
+    <select id="plan" name="plan" required aria-required="true">
+      <optgroup label="Basic>
+        <option value="basic-monthly">Monthly ($9.99)</option>
+        <option value="basic-annual">Annual ($99.99)</option>
+      </optgroup>
+      <optgroup label="Premium">
+        <option value="premium-monthly">Monthly ($19.99)</option>
+        <option value="premium-annual">Annual ($199.99)</option>
+      </optgroup>
+    </select>
+    <br>
+    <label for="message">Message:</label>
+    <textarea id="message" name="message" rows="4" cols="50"></textarea>
+    <br>
+    <label for="color">Favorite Color:</label>
+    <input type="color" id="color" name="color">
+    <br>
+    <label for="datalist">Select a City:</label>
+    <input type="text" list="cities" name="city" id="datalist">
+    <datalist id="cities">
+      <option value="New York">
+      <option value="Los Angeles">
+      <option value="Chicago">
+      <option value="Houston">
+      <option value="Phoenix">
+    </datalist>
+  </fieldset>
+  <br>
+  <label for="progress">Progress:</label>
+    <progress id="progress" value="50" max="100"></progress>
+    <meter value="5" min="0" max="10">5 out of 10</meter>
+  <button type="submit">Submit</button>
+</form>
+```
+
+In this example it includes appropriate labeling and identification of
+form elements using the `label` and `for` attributes, as well as using
+the `fieldset` and `legend` elements to group related form controls
+together.
+
+It also includes appropriate use of the `required` attribute and ARIA
+attributes such as `aria-required` to indicate which form controls are
+required, as well as the `list` attribute and `datalist` element for
+providing suggestions for form input.
+
+However, there are additional accessibility considerations that may need
+to be taken into account based on the specific needs of the users and
+the context of the application, such as using appropriate color
+contrast, providing alternative text for images, and ensuring that form
+controls can be operated with the keyboard.
+
 
