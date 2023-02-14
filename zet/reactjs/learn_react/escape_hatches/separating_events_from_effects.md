@@ -1263,3 +1263,105 @@ export default function App() {
 }
 ```
 
+# Solutions
+
+## Challenge 1 of 4:
+
+As usual, when you're looking for bugs in Effects, start by searching for linter suppressions.
+
+If you remove the suppression comment, React will tell you that this Effect's code depends on `increment`, but you "lied" to React by claiming that this Effect does not depend on any reactive values (`[]`). Add `increment` to the dependency array:
+
+```javascript
+import { useState, useEffect } from 'react';
+
+export default function Timer() {
+  const [count, setCount] = useState(0);
+  const [increment, setIncrement] = useState(1);
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      setCount(c => c + increment);
+    }, 1000);
+    return () => {
+      clearInterval(id);
+    };
+  }, [increment]);
+
+  return (
+    <>
+      <h1>
+        Counter: {count}
+        <button onClick={() => setCount(0)}>Reset</button>
+      </h1>
+      <hr />
+      <p>
+        Every second, increment by:
+        <button disabled={increment === 0} onClick={() => {
+          setIncrement(i => i - 1);
+        }}>–</button>
+        <b>{increment}</b>
+        <button onClick={() => {
+          setIncrement(i => i + 1);
+        }}>+</button>
+      </p>
+    </>
+  );
+}
+```
+
+Now, when `increment` changes, React will re-synchronize your Effect, which will restart the interval.
+
+## Challenge 2 of 4:
+
+The issues is that the code inside the Effect uses the `increment` state variable. Since it's a dependency of your Effect, every change to `increment` causes the Effect to re-synchronize, which causes the interval to clear. If you keep clearing the interval every time before it has a chance to fire, it will appear as if the timer has stalled.
+
+To solve the issue, extract an `onTick` Effect Event from the Effect:
+
+```javascript
+import { useState, useEffect } from 'react';
+import { experimental_useEffectEvent as useEffectEvent } from 'react';
+
+export default function Timer() {
+  const [count, setCount] = useState(0);
+  const [increment, setIncrement] = useState(1);
+
+  const onTick = useEffectEvent(() => {
+    setCount(c => c + increment);
+  })
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      onTick();
+    }, 1000);
+    return () => {
+      clearInterval(id);
+    };
+  }, []);
+
+  return (
+    <>
+      <h1>
+        Counter: {count}
+        <button onClick={() => setCount(0)}>Reset</button>
+      </h1>
+      <hr />
+      <p>
+        Every second, increment by:
+        <button disabled={increment === 0} onClick={() => {
+          setIncrement(i => i - 1);
+        }}>–</button>
+        <b>{increment}</b>
+        <button onClick={() => {
+          setIncrement(i => i + 1);
+        }}>+</button>
+      </p>
+    </>
+  );
+}
+```
+
+Since `onTick` is an Effect Event, the code inside it isn't reactive. The change to `increment` does not trigger any Effects.
+
+## Challenge 3 of 4:
+
+
