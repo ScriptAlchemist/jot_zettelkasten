@@ -1364,4 +1364,207 @@ Since `onTick` is an Effect Event, the code inside it isn't reactive. The change
 
 ## Challenge 3 of 4:
 
+The problem with the above example is that it extracted an Effect Event
+called `onMount` without considering what the code should actually be
+doing. You should only extract Effect Events for a specific reason: when
+you want to make a part of your code non-reactive. However, the
+`setInterval` call should be reactive with respect to the `delay` state
+variable. If the `delay` changes, you want to set up the interval from
+scratch! To fix this code, pull all the reactive code back inside the
+Effect:
 
+```javascript
+import { useState, useEffect } from 'react';
+import { experimental_useEffectEvent as useEffectEvent } from 'react';
+
+export default function Timer() {
+  const [count, setCount] = useState(0);
+  const [increment, setIncrement] = useState(1);
+  const [delay, setDelay] = useState(100);
+
+  const onTick = useEffectEvent(() => {
+    setCount(c => c + increment);
+  });
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      onTick();
+    }, delay);
+    return () => {
+      clearInterval(id);
+    }
+  }, [delay]);
+
+  return (
+    <>
+      <h1>
+        Counter: {count}
+        <button onClick={() => setCount(0)}>Reset</button>
+      </h1>
+      <hr />
+      <p>
+        Increment by:
+        <button disabled={increment === 0} onClick={() => {
+          setIncrement(i => i - 1);
+        }}>–</button>
+        <b>{increment}</b>
+        <button onClick={() => {
+          setIncrement(i => i + 1);
+        }}>+</button>
+      </p>
+      <p>
+        Increment delay:
+        <button disabled={delay === 100} onClick={() => {
+          setDelay(d => d - 100);
+        }}>–100 ms</button>
+        <b>{delay} ms</b>
+        <button onClick={() => {
+          setDelay(d => d + 100);
+        }}>+100 ms</button>
+      </p>
+    </>
+  );
+}
+```
+
+In general, you should be suspicious of functions like `onMount` that focus on the timing rather than the purpose of a piece of code. It may feel "more descriptive" at first but it obscures your intent. As a rule of thumb, Effect Events should correspond to something that happens from the user's perspective. Fro example, `onMessage`, `onTick`, `onVisit`, or `onConnected` are good Effect Event names. Code inside them would likely not need to be reactive. On the other hand, `onMount`, `onUpdate`, `onUnmount`, or `onAfterRender` are so generic that it's easy to accidentally put code that should be reactive into them. This is why you should name your Effect Events after what the user thinks has happened, not when some code happened to run.
+
+## Challenge 4 of 4:
+
+Inside your Effect Event, `roomId` is the value at the time Effect Event was called.
+
+Your Effect Event is called with a two second delay. If you're quickly switching from the travel to the music room, by the time the travel room's notification shows, `roomId` is already `"music"`. This is why both notifications say "Welcome to music".
+
+To fix the issue, instead of reading the latest `roomId` inside the Effect Event, make it a parameter of your Effect Event, like `connectedRoomId` below. Then pass `roomId` from your Effect by calling `onConnected(roomId)`:
+
+```javascript
+import { useState, useEffect } from 'react';
+import { experimental_useEffectEvent as useEffectEvent } from 'react';
+import { createConnection, sendMessage } from './chat.js';
+import { showNotification } from './notifications.js';
+
+const serverUrl = 'https://localhost:1234';
+
+function ChatRoom({ roomId, theme }) {
+  const onConnected = useEffectEvent(connectedRoomId => {
+    showNotification('Welcome to ' + connectedRoomId, theme);
+  });
+
+  useEffect(() => {
+    const connection = createConnection(serverUrl, roomId);
+    connection.on('connected', () => {
+      setTimeout(() => {
+        onConnected(roomId);
+      }, 2000);
+    });
+    connection.connect();
+    return () => connection.disconnect();
+  }, [roomId]);
+
+  return <h1>Welcome to the {roomId} room!</h1>
+}
+
+export default function App() {
+  const [roomId, setRoomId] = useState('general');
+  const [isDark, setIsDark] = useState(false);
+  return (
+    <>
+      <label>
+        Choose the chat room:{' '}
+        <select
+          value={roomId}
+          onChange={e => setRoomId(e.target.value)}
+        >
+          <option value="general">general</option>
+          <option value="travel">travel</option>
+          <option value="music">music</option>
+        </select>
+      </label>
+      <label>
+        <input
+          type="checkbox"
+          checked={isDark}
+          onChange={e => setIsDark(e.target.checked)}
+        />
+        Use dark theme
+      </label>
+      <hr />
+      <ChatRoom
+        roomId={roomId}
+        theme={isDark ? 'dark' : 'light'}
+      />
+    </>
+  );
+}
+```
+
+The Effect that had `roomId` set to `travel` (so it connected to the "travel" room) will show the notification for "travel". The Effect that had `roomId` set to "music" (so it connected to the "music" room) will show the notification for "music". In other words, `connectedRoomId` comes from your Effect (which is reactive), while `theme` always uses the latest value.
+
+To solve the additional challenge, save the notification timeout ID and clear it in the cleanup function of your Effect:
+
+```javascript
+import { useState, useEffect } from 'react';
+import { experimental_useEffectEvent as useEffectEvent } from 'react';
+import { createConnection, sendMessage } from './chat.js';
+import { showNotification } from './notifications.js';
+
+const serverUrl = 'https://localhost:1234';
+
+function ChatRoom({ roomId, theme }) {
+  const onConnected = useEffectEvent(innerRoomId => {
+    showNotification('Welcome to ' + innerRoomId, theme);
+  });
+
+  useEffect(() => {
+    const connection = createConnection(serverUrl, roomId);
+    let connectionId;
+    connection.on('connected', () => {
+      connectionId = setTimeout(() => {
+        onConnected(roomId);
+      }, 2000);
+    });
+    connection.connect();
+    return () => {
+      connection.disconnect();
+      clearTimeout(connectionId);
+    }
+  }, [roomId]);
+
+  return <h1>Welcome to the {roomId} room!</h1>
+}
+
+export default function App() {
+  const [roomId, setRoomId] = useState('general');
+  const [isDark, setIsDark] = useState(false);
+  return (
+    <>
+      <label>
+        Choose the chat room:{' '}
+        <select
+          value={roomId}
+          onChange={e => setRoomId(e.target.value)}
+        >
+          <option value="general">general</option>
+          <option value="travel">travel</option>
+          <option value="music">music</option>
+        </select>
+      </label>
+      <label>
+        <input
+          type="checkbox"
+          checked={isDark}
+          onChange={e => setIsDark(e.target.checked)}
+        />
+        Use dark theme
+      </label>
+      <hr />
+      <ChatRoom
+        roomId={roomId}
+        theme={isDark ? 'dark' : 'light'}
+      />
+    </>
+  );
+}
+```
+
+This ensures that already scheduled (but not yet displayed) notifications get cancelled when you change rooms.

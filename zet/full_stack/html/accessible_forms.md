@@ -1,5 +1,7 @@
 # Let's Talk About Forms
 
+[WCAG 2.1](https://www.w3.org/WAI/WCAG21/Understanding/conformance#levels)
+
 > Do forms scare you?
 >
 > The confuse me a bit so I would like to de-mistify them a bit today
