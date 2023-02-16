@@ -423,3 +423,292 @@ function Form() {
 ```
 
 But by doing this, you've introduced a bug. Imagine you submit the form first and them switch between Dark and Light themes. The `theme` will change, the Effect will re-run, and so it will display the same notification again!
+
+The problem here is that this shouldn't be an Effect in the first place.
+You want to send this POST request and show the notification in response
+to submitting the form, which is a particular interaction. When you wan
+to run some code in response to a particular interaction, put that logic
+directly into the corresponding event handler:
+
+```javascript
+function Form() {
+  const theme = useContext(ThemeContext);
+
+  function handleSubmit() {
+    // ✅ Good: Event-specific logic is called from event handlers
+    post('/api/register');
+    showNotification('Successfully registered!', theme);
+  }
+  //...
+}
+```
+
+Now that the code is an event handler, it's not reactive--so it will only run when the user submits the form. Read more about choosing between event handlers and Effects and how to delete unnecessary Effects.
+
+### Is you Effect doing several unrelated things?
+
+The next question you should ask yourself is whether your Effect is doing several unrelated things.
+
+Imagine you're creating a shipping for where the user needs to choose their city and area. You fetch the list of `cities` from the server according to the selected `country` so that you can show them as dropdown options:
+
+```javascript
+function ShippingForm({ country }) {
+  const [cities, setCities] = useState(null);
+  const [city, setCity] = useState(null);
+
+  useEffect(() => {
+    let ignore = false;
+    fetch(`/api/cities?country=${country}`)
+      .then(res => res.json())
+      .then(json => {
+        if (!ignore) {
+          setCities(json);
+        }
+      });
+    return () => {
+      ignore = true;
+    };
+  }, [country]); // ✅ All dependencies declared
+  // ...
+```
+
+This is a good example of fetching data in an Effect. You are synchronizing the `cities` state with the network according to the `country` prop. You can't do this in an event handler because you need to fetch as soon as `ShippingForm` is displayed and whenever the `country` changes (no matter which interaction causes it).
+
+Now let's say you're adding a second select box for city areas, which should fetch the `areas` for the currently selected `city`. You might start by adding a second `fetch` call for the list of areas inside the same Effect:
+
+```javascript
+function ShippingForm({ country }) {
+  const [cities, setCities] = useState(null);
+  const [city, setCity] = useState(null);
+  const [areas, setAreas] = useState(null);
+
+  useEffect(() => {
+    let ignore = false;
+    fetch(`/api/cities?country=${country}`)
+      .then(res = > res.json())
+      .then(json => {
+        if (!ignore) {
+          setCities(json);
+        }
+      });
+    // 🛑 Avoid: A single Effect synchronizes two independent processes
+    if (city) {
+      fetch(`/api/areas?city=${city}`);
+        .then(res => res.json())
+        .then(json => {
+          if (!ignore) {
+            setAreas(json);
+          }
+        });
+    }
+    return () => {
+      ignore = true;
+    };
+  }, [country, city]); // ✅ All dependencies declared
+  // ...
+```
+
+However, since the Effect now uses the `city` state variable, you've had to add `city` to the list of dependencies. That, in turn, has introduced a problem. Now, whenever the user selects a different city, the Effect will re-run and call `fetchCities(country)`. As a result, you will be unnecessarily re-fetching the list of cities many times.
+
+The problem with this code is that you're synchronizing two different unrelated things:
+
+1. You want to synchronize the `cities` state to the network based on the `country` prop.
+2. You want to synchronize the `areas` state to the network based on the `city` state.
+
+Split the logic into two Effects, each of which reacts to the props that it needs to synchronize with:
+
+```javascript
+function ShippingForm({ country }) {
+  const [cities, setCities] = useState(null);
+  useEffect(() => {
+    let ignore = false;
+    fetch(`/api/cities?country=${country}`)
+      .then(res => res.json())
+      .then(json => {
+        if (!ignore) {
+          setCities(json);
+        }
+      });
+    return () => {
+      ignore = true;
+    };
+  }, [country]); // ✅ All dependencies declared
+
+  const [city, setCity] = useState(null);
+  const [areas, setAreas] = useState(null);
+  useEffect(() => {
+    if (city) {
+      let ignore = false;
+      fetch(`/api/areas?city=${city}`)
+        .then(res => res.json())
+        .then(json => {
+          if (!ignore) {
+            setAreas(json);
+          }
+        });
+      return () => {
+        ignore = true;
+      };
+    }
+  }, [city]); // ✅ All dependencies declared
+  // ...
+```
+
+Now the first Effect only re-runs if the `country` changes, while the second Effect re-runs when the `city` changes. You've separated them by purpose: two different things are synchronized by two separate Effects. Two separate Effects have two separate dependency lists, so they will no longer trigger each other unintentionally.
+
+The final code is longer than the original, but splitting these Effects is still correct. Each Effect should represent an independent synchronization process. In this example, deleting one Effect doesn't break the other Effect's logic. This is a goo indication that they synchronize different things, and it made sense to split them up. If the duplication feels concerning, you can further improve this code by extracting repetitive logic into custom Hook.
+
+### Are you reading some state to calculate the next state?
+
+This Effect updates the `messages` state variable with a newly created array every time a new message arrives:
+
+```javascript
+function ChatRoom({ roomId }) {
+  const [message, setMessage] = useState([]);
+  useEffect(() => {
+    const connection = createConnection();
+    connection.connect();
+    connection.on('message', (newMsg) => {
+      setMessages([...messages, newMsg]);
+    });
+    // ...
+```
+
+It uses the `messages` variable to create a new array starting with all the existing messages and adds the new message at the end. However, since `messages` is a reactive value read by an Effect, it must be a dependency:
+
+```javascript
+function ChatRoom({ roomId }) {
+  const [messages, setMessages] = useState([]);
+  useEffect(() => {
+    const connection = createConnection();
+    connection.connect();
+    connection.on('message', (newMsg) => {
+      setMessages([...messages, newMsg]);
+    });
+    return () => connection.disconnect();
+  }, [roomId, messages]); // ✅ All dependencies declared
+  // ...
+```
+
+And making `messages` a dependency introduces a problem.
+
+Every time you receive a message, `setMessages()` causes the component to re-render with a new `messages` array that includes the received message. However, since this Effect now depends on `messages`, this will also re-synchronize the Effect. So every new messages will make the chat re-connect. The user would not like that!
+
+To fix the issue, don't read the `messages` inside the Effect. Instead, pass an updater function to `setMessages`:
+
+```javascript
+function ChatRoom({ roomId }) {
+  const [messages, setMessages] = useState([]);
+  useEffect(() => {
+    const connection = createConnection();
+    connection.connect();
+    connection.on('message', (newMsg) => {
+      setMessages(msgs => [...msgs, newMsg]);
+    });
+    return () => connection.disconnect();
+  }, [roomId]); // ✅ All dependencies declared
+  // ...
+```
+
+Notice how your Effect does not read the `messages` variable at all now. You only need to pass an updater function like `msgs => [...msgs, receivedMessage]`. React puts your updater function in a queue and will provide the `msgs` argument to it during the next render. This is why the Effect itself doesn't need to depend on `messages` anymore. As a result of this fix, receiving a chat message will no longer make the chat re-connect.
+
+### Do you want to read a value without "reacting" to its changes?
+
+> #### Under Construction
+>
+> This section describes an experimental API that has not yet been added
+> to React, so you can't use it yet.
+
+Suppose that you want to play a sound when the user receives a new message unless `isMuted` is `true`:
+
+```javascript
+function ChatRoom({ roomId }) {
+  const [messages, setMessages] = useState([]);
+  const [isMuted, setIsMuted] = useState(false);
+
+  useEffect(() => {
+    const connection = createConnection();
+    connection.connect();
+    connection.on('message', (newMsg) => {
+      setMessages(msgs => [...msgs, newMsg]);
+      if (!isMuted) {
+        playSound();
+      }
+    });
+    // ...
+```
+
+Since your Effect now uses `isMuted` in its code, you have to add it to the dependencies:
+
+```javascript
+function ChatRoom({roomId}) {
+  const [messages, setMessages] = useState([]);
+  const [isMuted, setIsMuted] = useState(false);
+
+  useEffect(() => {
+    const connection = createConnection();
+    connection.connect();
+    connection.on('message', (newMsg) => {
+      setMessages(msgs => [...msgs, newMsg]);
+      if (!isMuted) {
+        playSound();
+      }
+    });
+    return () => connection.disconnect();
+  }, [roomId, isMuted]); // ✅ All dependencies declared
+  // ...
+```
+
+The problem is that every time `isMuted` changes (for example, when the user presses the "Muted" toggle), the Effect will re-synchronize, and reconnect to the chat server. This is not the desired user experience! (In this example, even disabling the linter would not work--if you do that, `isMuted` would get "stuck" with is old value.)
+
+To solve this problem, you need to extract the logic that shouldn't be reactive out of the Effect. You don't want this Effect to "react" to the changes in `isMuted`. Move this non-reactive piece of logic into an Effect Event:
+
+```javascript
+import { useEffect, useState, useEventEffect } from 'react'
+
+function ChatRoom({ roomId }) {
+  const [messages, setMessages] = useState([]);
+  const [isMuted, setIsMuted] = useState(false);
+
+  const onMessage = useEffectEvent(receivedMessage => {
+    setMessages(msgs => [...msgs, receivedMessage]);
+    if (!isMuted) {
+      playSound();
+    }
+  });
+
+  useEffect(() => {
+    const connecton = createConnection();
+    connection.connect();
+    connection.on('message', (newMsg) => {
+      onMessage(newMsg);
+    });
+    return () => connection.disconnect();
+  }, [roomId]); // ✅ All dependencies declared
+  /...
+```
+
+Effect Events let you split an Effect into reactive parts (which should "react" to reactive values like `roomId` and their changes) and non-reactive parts (which only read their latest values, like `onMessage` reads `isMuted`). Now that you read `isMuted` inside an Effect Event, it doesn't need to be a dependency of your Effect. As a result, the chat won't re-connect when you toggle the "muted" setting on and off, solving the original issue!
+
+### Wrapping an event handler from the props
+
+You might run into a similar problem when your component receives an event handler as a prop:
+
+```javascript
+function ChatRoom({ roomId, onReceiveMessage }) {
+  const [messages, setMessages] = useState([]);
+
+  useEffect(() => {
+    const connection = createConnection();
+    connection.connect();
+    connection.on('message', (newMsg) => {
+      onRecieveMessage(newMsg);
+    });
+    return () => connection.disconnect();
+  }, [roomId, onReceiveMessage]); // ✅ All dependencies declare
+  // ...
+```
+
+Supposed that the parent component passes a different `onReceiveMessage` function on every render:
+
+
