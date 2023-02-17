@@ -1598,8 +1598,209 @@ export default function App() {
 }
 ```
 
-# Solutions
+# Solution
 
 ## Challenge 1 of 4:
+
+You want to update the `count` state to be `count + 1` from inside the
+Effect. However, this makes your Effect depend on `count`, which changes
+with every tick, and that's why your interval gets re-created on every
+tick.
+
+To solve this, use the updater function and write `setCount(c => c + 1)`
+instead of `setCount(count + 1)`:
+
+```javascript
+import { useState, useEffect } from 'react';
+
+export default function Timer() {
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    console.log('✅ Creating an interval');
+    const id = setInterval(() => {
+      console.log('⏰ Interval tick');
+      setCount(c => c + 1);
+    }, 1000);
+    return () => {
+      console.log('❌ Clearing an interval');
+      clearInterval(id);
+    };
+  }, []);
+
+  return <h1>Counter: {count}</h1>
+}
+```
+
+Instead of reading `count` inside the Effect, you pass a `c => c + 1` instruction ("increment this number!") to React. React will apply it on the next render. And since you don't need to read the value of `count` inside your Effect anymore, so you can keep your Effect's dependencies empty (`[]`). This prevents your Effect from re-creating the interval on every tick.
+
+## Challenge 2 of 4:
+
+Your Effect needs to read the lastest value of `duration`, but you don't
+want it to "react" to changes in `duration`. You use `duration` to start
+the animation, but starting animation isn't reactive. Extract the
+non-reactive line of code into an Effect Event, and call that function
+from your Effect.
+
+```javascript
+import { useState, useEffect, useRef } from 'react';
+import { FadeInAnimation } from './animation.js';
+import { experimental_useEffectEvent as useEffectEvent } from 'react';
+
+function Welcome({ duration }) {
+  const ref = useRef(null);
+
+  const onAppear = useEffectEvent(animation => {
+    animation.start(duration);
+  });
+
+  useEffect(() => {
+    const animation = new FadeInAnimation(ref.current);
+    onAppear(animation);
+    return () => {
+      animation.stop();
+    };
+  }, []);
+
+  return (
+    <h1
+      ref={ref}
+      style={{
+        opacity: 0,
+        color: 'white',
+        padding: 50,
+        textAlign: 'center',
+        fontSize: 50,
+        backgroundImage: 'radial-gradient(circle, rgba(63,94,251,1) 0%, rgba(252,70,107,1) 100%)'
+      }}
+    >
+      Welcome
+    </h1>
+  );
+}
+
+export default function App() {
+  const [duration, setDuration] = useState(1000);
+  const [show, setShow] = useState(false);
+
+  return (
+    <>
+      <label>
+        <input
+          type="range"
+          min="100"
+          max="3000"
+          value={duration}
+          onChange={e => setDuration(Number(e.target.value))}
+        />
+        <br />
+        Fade in duration: {duration} ms
+      </label>
+      <button onClick={() => setShow(!show)}>
+        {show ? 'Remove' : 'Show'}
+      </button>
+      <hr />
+      {show && <Welcome duration={duration} />}
+    </>
+  );
+}
+```
+
+Effect Events like `onAppear` are not reative, so you can read `duration` inside without retriggering the animation.
+
+## Challenge 3 of 4:
+
+Your Effect is re-running because it depends on the `options` object. Objects can be re-created unintentionally, you should try to avoid them as dependencies of your Effects whenever possible.
+
+The least invasive fix is to read `roomId` and `serverUrl` right outside the Effect, and them make the Effect depend on those primitive values (which can't change unintentionally). Inside the Effect, create an object and pass it to `createConnection`:
+
+```javascript
+import { useEffect } from 'react';
+import { createConnection } from './chat.js';
+
+export default function ChatRoom({ options }) {
+  const { roomId, serverUrl } = options;
+  useEffect(() => {
+    const connection = createConnection({
+      roomId,
+      serverUrl
+    });
+    connection.connect();
+    return () => connection.disconnect();
+  }, [roomId, serverUrl]);
+
+  return <h1>Welcome to the {options.roomId} room!</h1>;
+}
+```
+
+It would be even better to replace the object `options` prop with the more specific `roomId` and `serverUrl` props:
+
+`ChatRoom.js`:
+
+```javascript
+import { useState, useEffect } from 'react';
+import { createConnection } from './chat.js';
+
+export default function ChatRoom({ roomId, serverUrl }) {
+  useEffect(() => {
+    const connection = createConnection({
+      roomId: roomId,
+      serverUrl: serverUrl
+    });
+    connection.connect();
+    return () => connection.disconnect();
+  }, [roomId, serverUrl]);
+
+  return <h1>Welcome to the {roomId} room!</h1>;
+}
+```
+
+`App.js`:
+
+```javascript
+import { useState } from 'react';
+import ChatRoom from './ChatRoom.js';
+
+export default function App() {
+  const [isDark, setIsDark] = useState(false);
+  const [roomId, setRoomId] = useState('general');
+  const [serverUrl, setServerUrl] = useState('https://localhost:1234');
+
+  return (
+    <div className={isDark ? 'dark' : 'light'}>
+      <button onClick={() => setIsDark(!isDark)}>
+        Toggle theme
+      </button>
+      <label>
+        Server URL:{' '}
+        <input
+          value={serverUrl}
+          onChange={e => setServerUrl(e.target.value)}
+        />
+      </label>
+      <label>
+        Choose the chat room:{' '}
+        <select
+          value={roomId}
+          onChange={e => setRoomId(e.target.value)}
+        >
+          <option value="general">general</option>
+          <option value="travel">travel</option>
+          <option value="music">music</option>
+        </select>
+      </label>
+      <hr />
+      <ChatRoom
+        roomId={roomId}
+        serverUrl={serverUrl}
+      />
+    </div>
+  );
+}
+```
+
+Sticking to primitive props where possible makes it easier to optimize your components later.
+
+## Challenge 4 of 4:
 
 
