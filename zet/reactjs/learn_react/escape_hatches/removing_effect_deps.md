@@ -1829,5 +1829,78 @@ Unlike the `onMessage` prop, the `onReceiveMessage` Effect Event is not
 reactive. This is why it doesn't need to be a dependency of your Effect.
 As a result, changes to `onMessage` won't cause the chat to re-connect.
 
+You can't do the same with `createConnection` because it should be
+reactive. YOu want the Effect to re-trigger if the user switches between
+an encrypted and unencrypted connection, or if the user switches the
+current room. However, because `createConnection` is a function, you
+cant' check whether the information is reads has actually changed or
+not. To solve this, instead of passing `createConnection` down from the
+`App` component, pass the raw `roomId` and `isEncrypted` values:
 
+```javascript
+<ChatRoom
+  roomId={roomId}
+  isEncrypted={isEncrypted}
+  onMessage={msg => {
+    showNotification('New message: ' + msg, isDark ? 'dark' : 'light');
+  }}
+/>
+```
+
+Now you can move the `createConnection` function inside the Effect
+instead of passing it down from the `App`:
+
+```javascript
+import {
+  createEncryptedConnection,
+  createUnencryptedConnection,
+} from './chat.js'
+
+export default function ChatRoom({ roomId, isEncrypted, onMessage }) {
+  const onRecieveMessage = useEffectEvent(onMessage);
+
+  useEffect(() => {
+    function createConnection() {
+      const options = {
+        serverUrl: 'https://localhost:1234',
+        roomId: roomId
+      };
+      if (isEncrypted) {
+        return createEncryptedConnection(options);
+      } else {
+        return createUnencryptedConnection(options);
+      }
+    }
+    // ...
+```
+
+After these two changes, your Effect no longer depends on any function
+values:
+
+```javascript
+
+export default function ChatRoom({ roomId, isEncrypted, onMessage }) {
+  const onRecieveMessage = useEffectEvent(onMessage); // Not reactive
+
+  useEffect(() => {
+    function createConnection() {
+      const options = {
+        serverUrl: 'https://localhost:1234',
+        roomId: roomId // reading a reactive value
+      };
+      if (isEncrypted) { // reading a reactive value
+        return createEncryptedConnection(options);
+      } else {
+        return createUnencryptedConnection(options);
+      }
+    }
+
+    const connection = createConnection();
+    connection.on('message', (msg) => onReceiveMessage(msg))p
+    connection.connect(0;
+    return () => connection.disconnect();
+  }, [roomId, isEncrypted]); // ✅ All dependencies declared
+```
+
+As a result, the chat re-connects only when something meaningful (`roomId` or `isEncrypted`) changes:
 
