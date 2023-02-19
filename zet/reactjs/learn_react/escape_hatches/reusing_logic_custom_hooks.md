@@ -452,7 +452,7 @@ Because custom Hooks re-render together with your component, they always receive
 
 ```javascript
 import [ useState } from 'react'
-import CharRoom from './ChatRoom.js`;
+import ChatRoom from './ChatRoom.js`;
 
 export default function App() {
   const [roomId, setRoomId] = useState('general');
@@ -577,3 +577,202 @@ export function showNotifications(message, theme = 'dark') {
   }).showToast();
 }
 ```
+
+When you change `serverUrl` or `roomId`, the Effect "reacts" to your
+changes and re-synchronizes. You can tell by the console messages that
+the chat re-connects every time the you change your Effect's
+dependencies.
+
+Now move the Effect's code into a custom Hook:
+
+```javascript
+export function useChatRoom({ serverUrl, roomId }) {
+  useEffect(() => {
+    const options = {
+      serverUrl: serverUrl,
+      roomId: roomId
+    };
+    const connection = createConnection(options);
+    connection.connect();
+    connection.on('message', (msg) => {
+      showNotification('New message: ' + msg);
+    });
+    return () => connection.disconnect();
+  }, [roomId, serverUrl]);
+}
+```
+
+This lets your `ChatRoom` component call your custom Hook without
+worrying about how it works inside:
+
+```javascript
+export default function ChatRoom({ roomId }) {
+  const [serverUrl, setServerUrl] = useState('https://localhost:1234');
+
+  useChatRoom({
+    roomId: roomId,
+    serverUrl: serverUrl
+  });
+
+  return (
+    <>
+      <label>
+        Server URL:
+        <input value={serverUrl} onChange={e =>
+        setServerUrl(e.target.value)} />
+      </label>
+      <h1>Welcome to the {roomId} room!</h1>
+    </>
+  );
+}
+```
+
+This looks much simpler! (But it does the same thing.)
+
+Notice that the logic still responds to prop and state changes. Try
+editing the server URL or the selected room:
+
+`App.js`:
+
+```javascript
+import { useState } from 'react';
+import ChatRoom from './ChatRoom.js';
+
+export default function App() {
+  const [roomId, setRoomId] = useState('general');
+  return (
+    <>
+      <label>
+        Choose the chat room:{' '}
+        <select
+          value={roomId}
+          onChange={e => setRoomId(e.target.value)}
+        >
+          <option value="general">general</option>
+          <option value="travel">travel</option>
+          <option value="music">music</option>
+        </select>
+      </label>
+      <hr />
+      <ChatRoom
+        roomId={roomId}
+      />
+    </>
+  );
+}
+```
+
+`ChatRoom.js`:
+
+```javascript
+import { useState } from 'react';
+import { useChatRoom } from './useChatRoom.js':
+
+export default function ChatRoom({ roomId }) {
+  const [serverUrl, setServerUrl] = useState('https://localhost:1234');
+
+  useChatRoom({
+    roomId: roomId,
+    serverUrl: serverUrl
+  });
+
+  return (
+    <>
+      <label>
+        Server URL:
+        <input value={serverUrl} onChange={e => setServerUrl(e.target.value)} />
+      </label>
+      <h1>Welcome to the {roomId} room!<h1>
+    </>
+  );
+}
+```
+
+`useChatRoom.js`:
+
+```javascript
+import { useEffect } from 'react';
+import { createConnection } from './chat.js';
+
+export function useChatRoom({ serverUrl, roomId }) {
+  useEffect(() => {
+    const options = {
+      serverUrl: serverUrl,
+      roomId: roomId
+    };
+    const connection = createConnection(options);
+    connection.connect();
+    connection.on('message', (msg) => {
+      showNotification('New message: ' + msg);
+    });
+    return () => connection.disconnect();
+  }, [roomId, serverUrl]);
+}
+```
+
+`chat.js`:
+
+```javascript
+export function createConnection({ serverUrl, roomId }) {
+  if (typeof serverUrl !== 'string') {
+    throw Error('Expected serverUrl to be a string. Received: ' + serverUrl);
+  }
+  if (typeof roomId !== 'string') {
+    throw Error('Expected roomId to be a string. Received: ' + roomId);
+  }
+  let intervalId;
+  let messageCallback;
+  return {
+    connect() {
+      console.log('✅ Connecting to "' + roomId + '" room at ' + serverUrl + '...');
+      clearInterval(intervalId);
+      intervalId = setInterval(() => {
+        if (messageCallback) {
+          if (Math.random() > 0.5) {
+            messageCallback('hey');
+          } else {
+            messageCallback('lol');
+          }
+        }
+      }, 3000);
+    },
+    disconnect() {
+      clearInterval(intervalId);
+      messageCallback = null;
+      console.log('❌ Disconnected from "' + roomId + '" room at ' + serverUrl);
+    },
+    on(event, callback) {
+      if (messageCallback) {
+        throw Error('Cannot add the handler twice.');
+      }
+      if (event !== 'message') {
+        throw Error('Only "message" event is supported.');
+      }
+      messageCallback = callback;
+    },
+  };
+}
+```
+
+`notifications.js`:
+
+```javascript
+import Toastify from 'toastify-js';
+import 'toastify-js/src/toastify.css';
+
+export function showNotification(message, theme = 'dark') {
+  Toastify({
+    test: message,
+    duration: 2000,
+    gravity: 'top',
+    position: 'right',
+    style: {
+      background: theme === 'dark' ? 'black' : 'white',
+      color: theme === 'dark' ? 'white': 'black',
+    },
+  }).showToast();
+}
+```
+Notice how you're taking the return value of one Hook:
+
+```javascript

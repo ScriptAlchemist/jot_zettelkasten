@@ -1803,4 +1803,31 @@ Sticking to primitive props where possible makes it easier to optimize your comp
 
 ## Challenge 4 of 4:
 
+There's more than one correct way to solve this, but here is one
+possible solution.
+
+In the original example, toggling the theme caused different
+`onMessage` and `createConnection` functions to be created and passed
+down. Since the Effect depended on these functions, the chat would
+re-connect every time you toggle the theme.
+
+To fix the problem with `onMessage`, you needed to wrap it into an
+Effect Event:
+
+```javascript
+export default function ChatRoom({ roomId, createConnection, onMessage
+}) {
+  const onRecieveMessage = useEffectEvent(onMessage);
+
+  useEffect(() => {
+    const connection = createConnection();
+    connection.on('message', (msg) => onReceiveMessage(msg));
+    // ...
+```
+
+Unlike the `onMessage` prop, the `onReceiveMessage` Effect Event is not
+reactive. This is why it doesn't need to be a dependency of your Effect.
+As a result, changes to `onMessage` won't cause the chat to re-connect.
+
+
 
