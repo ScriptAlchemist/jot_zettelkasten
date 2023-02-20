@@ -1816,4 +1816,250 @@ export default function Counter() {
 // Write your custom Hook in this file!
 ```
 
-## Challenge 2 of 5: 
+## Challenge 2 of 5: Make the counter delay configurable
+
+In this example, there is a `delay` state variable controlled by a slider, but its value is not used. Pass the `delay` value to your custom `useCounter` Hook, and change the `useCounter` Hook to use the passed `delay` instead of hard coding `1000` ms.
+
+`useCounter.js`:
+
+```javascript
+import { useState, useEffect } from 'react';
+
+export function useCounter() {
+  const [count, setCount] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => {
+      setCount(c => c + 1);
+    }, 1000);
+    return () => clearInterval(id);
+  }, []);
+  return count;
+}
+```
+
+`App.js`:
+
+```javascript
+import { useState } from 'react';
+import { useCounter } from './useCounter.js';
+
+export default function Counter() {
+  const [delay, setDelay] = useState(1000);
+  const count = useCounter();
+  return (
+    <>
+      <label>
+        Tick duration: {delay} ms
+        <br />
+        <input
+          type="range"
+          value={delay}
+          min="10"
+          max="2000"
+          onChange={e => setDelay(Number(e.target.value))}
+        />
+      </label>
+      <hr />
+      <h1>Ticks: {count}</h1>
+    </>
+  );
+}
+```
+
+## Challenge 3 of 5: Extract `useInterval` out of `useCounter`
+
+Currently, your `useCounter` Hook does two things. It sets up an interval, and it also increments a state variable on every interval tick. Split out the logic that sets up the interval into a separate Hook called `useInterval`. It should take two arguments: the `onTick` callback, and the `delay`. After this change, your `useCounter` implementation should look like this:
+
+```javascript
+export function useCounter(delay) {
+  const [count, setCount] = useState(0);
+  useInterval(() => {
+    setCount(c => c + 1);
+  }, delay);
+  return count;
+}
+```
+
+Write `useInterval` in the `useInterval.js` file and import it into the `useCounter.js` file.
+
+`App.js`:
+
+```javascript
+import { useState } from 'react';
+import { useCounter } from './useCounter.js';
+
+export default function Counter() {
+  const count = useCounter(1000);
+  return <h1>Seconds passed: {count}</h1>;
+}
+```
+
+`useCounter.js`:
+
+```javascript
+import { useState, useEffect } from 'react';
+
+export function useCounter(delay) {
+  const [count, setCount] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => {
+      setCount(c => c + 1);
+    }, delay);
+    return () => clearInterval(id);
+  }, [delay]);
+  return count;
+}
+```
+
+`useInterval.js`:
+
+```javascript
+// Write your Hook here!
+```
+
+## Challenge 4 of 5: Fix a resetting interval
+
+In this example, there are two separate intervals
+
+The `App` component calls `useCounter`, which calls `useInterval` to update the counter every second. But the `App` component also calls `useInterval` to read only update the page background color every two seconds.
+
+For some reason, the callback that updates the page background never runs. Add some logs inside `useInterval`:
+
+```javascript
+useEffect(() => {
+  console.log('✅ Setting up an interval with delay ', delay)
+  const id = setInterval(onTick, delay);
+  return () => {
+    console.log('❌ Clearing an interval with delay ', delay)
+    clearInterval(id);
+  };
+}, [onTick, delay]);
+```
+
+Do the logs match what you expect to happen? If some of your Effects seem to re-synchronize unncecessarily, can you guess which dependency is causing that to happen? Is there some way to remove that dependency from your Effect?
+
+After you fix this issue, you should expect the page background to update every two seconds.
+
+`App.js`:
+
+```javascript
+import { useCounter } from './useCounter.js';
+import { useInterval } from './useInterval.js';
+
+export default function Counter() {
+  const count = useCounter(1000);
+
+  useInterval(() => {
+    const randomColor = `hsla(${Math.random() * 360}, 100%, 50%, 0.2)`;
+    document.body.style.backgroundColor = randomColor;
+  }, 2000);
+
+  return <h1>Seconds passed: {count}</h1>;
+}
+```
+
+`useCounter.js`:
+
+```javascript
+import { useState } from 'react';
+import { useInterval } from './useInterval.js';
+
+export function useCounter(delay) {
+  const [count, setCount] = useState(0);
+  useInterval(() => {
+    setCount(c => c + 1);
+  }, delay);
+  return count;
+}
+```
+
+`useInterval.js`:
+
+```javascript
+import { useEffect } from 'react';
+import { experimental_useEffectEvent as useEffectEvent } from 'react';
+
+export function useInterval(onTick, delay) {
+  useEffect(() => {
+    const id = setInterval(onTick, delay);
+    return () => {
+      clearInterval(id);
+    };
+  }, [onTick, delay]);
+}
+```
+
+## Challenge 5 of 5: Implement a staggering movement
+
+In this example, the `usePointerPosition()` Hook tracks the current pointer position. Try moving your cursor or your finger over the preview area and see the red dot follow your movement. Its position is saved in the `pos1` variable.
+
+In fact, there are five (!) differnt red dots being rendered. You don't see them because currently they all appear at the same position. This is what you need ot fix. What you want to implement instead is a "staggered" movement: each dot should "follow" the previous dot's path. For example, if you quickly move your cursor, the first dot should follow it immediatiely, the second dot should follow the first dot with a small delay, the third dot should follow the second dot, and so on.
+
+You need to implement the `useDelayedValue` custom Hook. Its current implementation returns the `value` provided to it. Instead, you want to return the value back from `delay` milliseconds ago. You might need some state and an Effect to do this.
+
+After you implement `useDelayedValue`, you should see the dots move following one another.
+
+`App.js`:
+
+```javascript
+import { usePointerPosition } from './usePointerPosition.js';
+
+function useDelayedValue(value, delay) {
+  // TODO: Implement this Hook
+  return value;
+}
+
+export default function Canvas() {
+  const pos1 = usePointerPosition();
+  const pos2 = useDelayedValue(pos1, 100);
+  const pos3 = useDelayedValue(pos2, 200);
+  const pos4 = useDelayedValue(pos3, 100);
+  const pos5 = useDelayedValue(pos3, 50);
+  return (
+    <>
+      <Dot position={pos1} opacity={1} />
+      <Dot position={pos2} opacity={0.8} />
+      <Dot position={pos3} opacity={0.6} />
+      <Dot position={pos4} opacity={0.4} />
+      <Dot position={pos5} opacity={0.2} />
+    </>
+  );
+}
+
+function Dot({ position, opacity }) {
+  return (
+    <div style={{
+      position: 'absolute',
+      backgroundColor: 'pink',
+      borderRadius: '50%',
+      opacity,
+      transform: `translate(${position.x}px, ${position.y}px)`,
+      pointerEvents: 'none',
+      left: -20,
+      top: -20,
+      width: 40,
+      height: 40,
+    }} />
+  );
+}
+```
+
+`usePointerPosition.js`:
+
+```javascript
+import { useState, useEffect } from 'react';
+
+export function usePointerPosition() {
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  useEffect(() => {
+    function handleMove(e) {
+      setPosition({ x: e.clientX, y: e.clientY });
+    }
+    window.addEventListener('pointermove', handleMove);
+    return () => window.removeEventListener('pointermove', handleMove);
+  }, []);
+  return position;
+}
+```
+
+# Solutions
