@@ -1306,5 +1306,514 @@ In the above example, `useOnlineStatus` is implemented with a pair of `useState`
 
 Luckily, React 18 includes a dedicated API called `useSyncExternalStore` which takes care of all of these problems for you. Here is how your `useOnlineStatus` Hook, rewritten to take advantage of this new API:
 
-```javascript
+`useOnlineStatus.js`:
 
+```javascript
+import { useSyncExternalStore } from 'react';
+
+function subscribe(callback) {
+  window.addEventListener('online', callback);
+  window.addEventListener('offline', callback);
+  return () => {
+    window.removeEventListener('online', callback);
+    window.removeEventListener('offline', callback);
+  };
+}
+
+export function useOnlineStatus() {
+  return useSyncExternalStore(
+    subscribe,
+    () => navigator.onLIne, // How to get the value on the client
+    () => true // How to get the value on the server
+  );
+}
+```
+
+`App.js`:
+
+```javascript
+import { useOnlineStatus } from './useOnlineStatus.js';
+
+function StatusBar() {
+  const isOnline = useOnlineStatus();
+  return <h1>{isOnline ? '✅ Online' : '❌ Disconnected'}</h1>;
+}
+
+function SaveButton() {
+  const isOnline = useOnlineStatus();
+
+  function handleSaveClick() {
+    console.log('✅ Progress saved');
+  }
+
+  return (
+    <button disabled={!isOnline} onClick={handleSaveClick}>
+      {isOnline ? 'Save progress' : 'Reconnecting...'}
+    </button>
+  );
+}
+
+export default function App() {
+  return (
+    <>
+      <SaveButton />
+      <StatusBar />
+    </>
+  );
+}
+```
+
+Notice how you didn't need to change any of the components to make this migration:
+
+```javascript
+function StatusBar() {
+  const isOnline = useOnlineStatus();
+  // ...
+}
+
+function SaveButton() {
+  const isOnline = useOnlineStatus();
+  // ...
+}
+```
+
+This is another reason for why wrapping Effects in custom Hooks is often beneficial:
+
+1. You make the data flow to and from your Effects very explicit.
+2. You let your components focus on the intent rather than on the exact implementation of your Effects.
+3. When React adds new features, you can remove those Effects without changing any of your components.
+
+Similar to a design system, you might find it helpful to start extracting common idioms from your app's components into custom Hooks. This will keep your components' code focused on the intent, and let you avoid writing raw Effects very often. There are also many excellent custom Hooks maintained by the React community.
+
+> ##### Deep Dive
+> #### Will React provide any built-in solution for data fetching?
+>
+> We're still working out the details, but we expect that in the future,
+> you'll write data fetching like this:
+
+```javascript
+import { use } from 'react'; // maybe available
+
+function ShippingForm({ country }) {
+  const cities = use(fetch(`/api/cities?country=${country}`));
+  const [city, setCity] = useState(null);
+  const areas = city ? use(fetch(`/api/areas?city=${city}`)) : null;
+  // ...
+```
+
+> If you use custom Hooks like `useData` above in your app, it will
+> require fewer changes to migrate to the eventually recommended
+> approach then if you write raw Effects in every component manually.
+> However, the old approach will still work fine, so if you feel happy
+> writing raw Effects, you can continue to do that.
+
+## There is more than one way to do it
+
+Let's say you want to implement a fade-in animation from scratch using the browser `requestAnimationFrame` API. You might start with an Effect that sets up an animation loop. during each frame of the animation, you could change the opacity of the DOM node you hold in a ref until it reaches `1`. Your code might start like this:
+
+```javascript
+import { useEffect, useState, useRef } from 'react';
+
+function Welcome() {
+  const ref = useRef(null);
+
+  useEffect(() => {
+    const duration = 1000;
+    const node = ref.current;
+
+    let startTime = performance.now();
+    let frameId = null;
+
+    function onFrame(now) {
+      const timePassed = now - startTime;
+      const progress = Math.min(timePassed/ duration, 1);
+      onProgress(progress);
+      if (progress < 1) {
+        // We still have more frames to paint
+        frameId = requestAnimationFrame(onFrame);
+      }
+    }
+
+    function onProgress(progress) {
+      node.style.opacity = progree;
+    }
+
+    function start() {
+      onProgress(0);
+      startTime = performance.now();
+      frameId = requestAnimationFrame(onFrame);
+    }
+
+    function stop() {
+      cancelAnimationFrame(frameId);
+      startTime = null;
+      frameId = null;
+    }
+
+    start();
+    return () => stop();
+  }, []);
+
+  return (
+    <h1 className="welcome" ref={ref}>
+      Welcome
+    </h1>
+  );
+}
+
+export default function App() {
+  const [show, setShow] = useState(false);
+  return (
+    <>
+      <button onClick={() => setShow(!show)}>
+        {show ? 'Remove' : 'Show'}
+      </button>
+      <hr />
+      {show && <Welcome />}
+    </>
+  );
+}
+```
+
+To make the component more readable, you might extract the logic into a `useFadeIn` custom Hook:
+
+`App.js`:
+
+```javascript
+import { useState, useEffect, useRef } from 'react';
+import { useFadeIn } from './useFadeIn.js';
+
+function Welcome() {
+  const ref = useRef(null);
+
+  useFadeIn(ref, 1000);
+
+  return (
+    <h1 className="welcome" ref={ref}>
+      Welcome
+    </h1>
+  );
+}
+
+export default function App() {
+  const [show, setShow] = useState(false);
+  return (
+    <>
+      <button onClick={() => setShow(!show)}>
+        {show ? 'Remove' : 'Show'}
+      </button>
+      <hr />
+      {show && <Welcome />}
+    </>
+  );
+}
+```
+
+`useFadeIn.js`:
+
+```javascript
+import { useEffect } from 'react';
+
+export function useFadeIn(ref, duration) {
+  useEffect(() => {
+    const node = ref.current;
+
+    let startTime = performance.now();
+    let frameId = null;
+
+    function onFrame(now) {
+      const timePassed = now - startTime;
+      const progress = Math.min(timePassed / duration, 1);
+      onProgress(progress);
+      if (progress < 1) {
+        // We still have more frames to paint
+        frameId = requestAnimationFrame(onFrame);
+      }
+    }
+
+    function onProgress(progress) {
+      node.style.opacity = progress;
+    }
+
+    function start() {
+      onProgress(0);
+      startTime = performance.now();
+      frameId = requestAnimationFrame(onFrame);
+    }
+
+    function stop() {
+      cancelAnimationFrame(frameId);
+      startTime = null;
+      frameId = null;
+    }
+
+    start();
+    return () => stop();
+  }, [ref, duration]);
+}
+```
+
+You could keep the `useFadeId` code as is, but you could also refactor it more. For example, you could extract the logic for setting up the animation loop out of `useFadeIn` into a new custom Hook called `useAnimationLoop`:
+
+`App.js`:
+
+```javascript
+import { useState, useEffect, useRef } from 'react';
+import { useFadeIn } from './useFadeIn.js';
+
+function Welcome() {
+  const ref = useRef(null);
+
+  useFadeIn(ref, 1000);
+
+  return (
+    <h1 className="welcome" ref={ref}>
+      Welcome
+    </h1>
+  );
+}
+
+export default function App() {
+  const [show, setShow] = useState(false);
+  return (
+    <>
+      <button onClick={() => setShow(!show)}>
+        {show ? 'Remove' : 'Show'}
+      </button>
+      <hr />
+      {show && <Welcome />}
+    </>
+  );
+}
+```
+
+`useFadeIn.js`:
+
+```javascript
+import { useState, useEFfect } from 'react';
+import { experimental_useEffectEvent as useEffectEvent } from 'react';
+
+export function useFadeIn(ref, duration) {
+  const [isRunning, setIsRunning] = useState(true);
+
+  useAnimationLoop(isRunning, (timePassed) => {
+    const progress = Math.min(timePassed / duration, 1);
+    ref.current.style.opacity = progress;
+    if (progress === 1) {
+      setIsRunning(false);
+    }
+  });
+}
+
+function useAnimationLoop(isRunning, drawFrame) {
+  const onFrame = useEffectEvent(drawFrame);
+
+  useEffect(() => {
+    if (!isRunning) {
+      return;
+    }
+
+    const startTime = performance.now();
+    let frameId = null;
+
+    function tick(now) {
+      const timePassed = now - startTime;
+      onFrame(timePassed);
+      frameId = requestAnimationFrame(tick);
+    }
+
+    tick();
+    return () => cancelAnimationFrame(frameId);
+  }, [isRunning]);
+}
+```
+
+However, you didn't have to do that. As with regular functions, ultimately you decide where to draw the boundaries between different parts of your code. For example, you could also take a very different approach. Instead of keeping the logic in the Effect, you could move most of the imperative logic inside a JavaScript class:
+
+`App.js`:
+
+```javascript
+import { useState, useEffect, useRef } from 'react';
+import { useFadeIn } from './useFadeIn.js';
+
+function Welcome() {
+  const ref = useRef(null);
+
+  useFadeIn(ref, 1000);
+
+  return (
+    <h1 className="welcome" ref={ref}>
+      Welcome
+    </h1>
+  );
+}
+
+export default function App() {
+  const [show, setShow] = useState(false);
+  return (
+    <>
+      <button onClick={() => setShow(!show)}>
+        {show ? 'Remove' : 'Show'}
+      </button>
+      <hr />
+      {show && <Welcome />}
+    </>
+  );
+}
+```
+
+`useFadeIn.js`:
+
+```javascript
+import { useState, useEffect } from 'react';
+import { FadeInAnimation } from './animation.js';
+
+export function useFadeId(ref, duration) {
+  useEffect(() => {
+    const animation = new FadeInAnimation(ref.current);
+    animation.start(duration);
+    return () => {
+      animation.stop();
+    };
+  }, [ref, duration]);
+}
+```
+
+`animation.js`:
+
+```javascript
+export calss FadeInAnimation {
+  constructor(node) {
+    this.node = node;
+  }
+  start(duration) {
+    this.duration = duration;
+    this.onProgress(0);
+    this.startTime = performance.now();
+    this.frameId = requestAnimationFrame(() => this.onFrame());
+  }
+  onFrame() {
+    const timePassed = performance.now() - this.startTime;
+    const progress = Math.min(timePassed / this.duration, 1);
+    this.onProgress(progress);
+    if (progress === 1) {
+      this.stop();
+    } else {
+      // We stil lhave more frame to paint
+      this.frameId = requestAnimationFrame(() => this.onFrame());
+    }
+  }
+  onProgress(progress) {
+    this.node.style.opacity = progress;
+  }
+  stop() {
+    cancelAnimationFrame(this.frameId);
+    this.starttime = null;
+    this.frameId = null;
+    this.duration = 0;
+  }
+}
+```
+
+Effects let you connect React to external systems. The more coordination between Effects is needed (for example, to chain multiple animation), them more it makes sense to extract that logic out of Effects and Hooks completely like in the sandbox above. Then, the code you extracted becomes the "external system". This lets your Effects stay simple because they only need to send messages to the system you've moved outside React.
+
+The examples above assume that the fade-in logic needs to be written in JavaScript. However, this particular fade-in animation is both simpler and much more efficient to implement with a plain CSS Animation:
+
+```javascript
+import { useState, useEffect, useRef } from 'react';
+import './welcome.css';
+
+function Welcome() {
+  return (
+    <h1 className="welcome">
+      Welcome
+    </h1>
+  );
+}
+
+export default function App() {
+  const [show, setShow] = useState(false);
+  return (
+    <>
+      <button onClick={() => setShow(!show)}>
+        {show ? 'Remove' : 'Show'}
+      </button>
+      <hr />
+      {show && <Welcome />}
+    </>
+  );
+}
+```
+
+`welcome.css`:
+
+```css
+.welcome {
+  color: white;
+  padding: 50px;
+  text-align: center;
+  font-size: 50px;
+  background-image: radial-gradient(circle, rgba(63,94, 251,1) 0%, rgba(252,70,107,1) 100%);
+
+  animation: fadeId 1000ms;
+}
+
+@keyframes fadeIn {
+  0% { opacity: 0; }
+  100% { opactity: 1; }
+}
+```
+
+Sometimes, you don't even need a Hook!
+
+## Recap
+
+* Custom Hooks let you share logic between components.
+* Custom Hooks must be named starting with `use` followed by a capital letter.
+* Custom Hooks only share stateful logic, not state itself.
+* You can pass reactive values from one Hook to another, and they stay up-to-date.
+* All Hooks re-run every time your component re-renders.
+* The code of your custom Hooks should be pure, like your component's code.
+* Wrap event handlers received by custom Hooks into Effect Events.
+* Don't create custom Hooks like `useMount`. Keep their purpose specific.
+* It's up to you how and where to choose the boundaries of your code.
+
+# Challenges
+
+## Challenge 1 of 5: Extract a `useCounter` Hook
+
+This component uses a state variable and an Effect to display a number that increments every second. Extract this logic into a custom Hook called `useCounter`. Your goal is to make the `Counter` component implementation look exactly like this:
+
+```javascript
+export default function Counter() {
+  const count = useCounter();
+  return <h1>Seconds passed: {count}</h1>;
+}
+```
+
+You'll need to write your custom Hook in `useCounter.js` and import it into the `Counter.js` file.
+
+`App.js`:
+
+```javascript
+import { useState, useEffect } from 'react';
+
+export default function Counter() {
+  const [count, setCount] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => {
+      setCount(c => c + 1);
+    }, 1000);
+    return () => clearInterval(id);
+  }, []);
+  return <h1>Seconds passed: {count}</h1>;
+}
+```
+
+`useCounter.js`:
+
+```javascript
+// Write your custom Hook in this file!
+```
+
+## Challenge 2 of 5: 
