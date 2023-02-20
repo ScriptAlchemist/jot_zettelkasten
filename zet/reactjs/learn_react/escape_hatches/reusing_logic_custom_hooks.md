@@ -2063,3 +2063,42 @@ export function usePointerPosition() {
 ```
 
 # Solutions
+
+## Challenge 1 of 5:
+
+Your code should look like this:
+
+`App.js`:
+
+```javascript
+import { useCounter } from './useCounter.js';
+
+export default function Counter() {
+  const count = useCounter();
+  return <h1>Seconds passed: {count}</h1>;
+}
+```
+
+`useCounter.js`:
+
+```javascript
+import { useState, useEffect } from 'react';
+
+export function default useCounter() {
+  const [count, setCount] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => {
+      setCount(c => c +1);
+    }, 1000);
+    return () => clearInterval(id);
+  }, []);
+  return count;
+}
+```
+
+Notice that `App.js` doesn't need to import `useState` or `useEffect`
+anymore.
+
+## Challenge 2 of 5
+
+
