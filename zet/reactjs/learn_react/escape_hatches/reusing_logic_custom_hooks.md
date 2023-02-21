@@ -2217,4 +2217,59 @@ export function useInterval(callback, delay) {
 
 ## Challenge 5 of 5:
 
+Here is a working version. You keep the `delayedValue` as a state variable. When `value` updates, your Effect schedules a timeout to update the `delayedValue`. This is why the `delayedValue` always "lags behind" the actual `value`.
+
+
+```javascript
+import { useState, useEffect } from 'react';
+import { usePointerPosition } from './usePointerPosition.js';
+
+function useDelayedValue(value, delay) {
+  const [delayedValue, setDelayedValue] = useState(value);
+
+  useEffect(() => {
+    setTimeout(() => {
+      setDelayedValue(value);
+    }, delay);
+  }, [value, delay]);
+
+  return delayedValue;
+}
+
+export default function Canvas() {
+  const pos1 = usePointerPosition();
+  const pos2 = useDelayedValue(pos1, 100);
+  const pos3 = useDelayedValue(pos2, 200);
+  const pos4 = useDelayedValue(pos3, 100);
+  const pos5 = useDelayedValue(pos3, 50);
+  return (
+    <>
+      <Dot position={pos1} opacity={1} />
+      <Dot position={pos2} opacity={0.8} />
+      <Dot position={pos3} opacity={0.6} />
+      <Dot position={pos4} opacity={0.4} />
+      <Dot position={pos5} opacity={0.2} />
+    </>
+  );
+}
+
+function Dot({ position, opacity }) {
+  return (
+    <div style={{
+      position: 'absolute',
+      backgroundColor: 'pink',
+      borderRadius: '50%',
+      opacity,
+      transform: `translate(${position.x}px, ${position.y}px)`,
+      pointerEvents: 'none',
+      left: -20,
+      top: -20,
+      width: 40,
+      height: 40,
+    }} />
+  );
+}
+```
+
+Note that this Effect does not need cleanup. If you called `clearTimeout` in the cleanup function, then each time the `value` changes, it would reset the already scheduled timeout. To keep the movement continuous, you want all the timeouts to fire.
 
