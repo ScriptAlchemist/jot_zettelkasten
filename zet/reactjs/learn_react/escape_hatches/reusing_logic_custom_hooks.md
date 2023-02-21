@@ -2101,4 +2101,120 @@ anymore.
 
 ## Challenge 2 of 5
 
+Pass the `delay` to your Hook with `useCounter(delay). Then, inside the
+Hooks, use `delay` instead of the hardcoded `1000` value. You'll need to
+add `delay` to your Effect's dependencies. This ensures that a change in
+`delay` will reset the interval.
+
+`App.js`:
+
+```javascript
+import { useState } from 'react';
+import { useCounter } from './useCounter.js';
+
+export default function Counter() {
+  const [delay, setDelay] = useState(1000);
+  const count = useCounter(delay);
+  return (
+    <>
+      <label>
+        Tick duration: {delay} ms
+        <br />
+        <input
+          type="range"
+          value={delay}
+          min="10"
+          max="2000"
+          onChange={e => setDelay(Number(e.target.value))}
+        />
+      </label>
+      <hr />
+      <h1>Ticks: {count}</h1>
+    </>
+  );
+}
+```
+
+`useCounter.js`:
+
+```javascript
+import { useState, useEffect } from 'react';
+
+export function useCounter(delay) {
+  const [count, setCount] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => {
+      setCount(c => c + 1);
+    }, delay);
+    return () => clearInterval(id);
+  }, [delay]);
+  return count;
+}
+```
+
+## Challenge 3 of 5:
+
+The logic inside `useInterval` should set up and clear the interval. It doesn't need to do anything else.
+
+`useInterval.js`:
+
+```javascript
+import { useEffect } from 'react';
+
+export function useInterval(onTick, delay) {
+  useEffect(() => {
+    const id = setInterval(onTick, delay);
+    return () => clearInterval(id);
+  }, [onTick, delay]);
+}
+```
+`useCounter.js`:
+
+```javascript
+import { useState } from 'react';
+import { useInterval } from './useInterval.js';
+
+export function useCounter(delay) {
+  const [count, setCount] = useState(0);
+  useInterval(() => {
+    setCount(c => c + 1);
+  }, delay);
+  return count;
+}
+```
+
+`App.js`:
+
+```javascript
+import { useCounter } from './useCounter.js';
+
+export default function Counter() {
+  const count = useCounter(1000);
+  return <h1>Seconds passed: {count}</h1>;
+}
+```
+
+## Challenge 4 of 5:
+
+Inside `useInterval`, wrap the tick callback into and Effect event, as you did earlier on this page.
+
+This will allow you to omit `onTick` from the dependencies of your Effect. The Effect won't re-synchronize on every re-render of the component, so the page background color change interval won't get reset every second before it has a chance to fire.
+
+With this change, both intervals work as expected and dont' interfere with each other:
+
+```javascript
+import { useEffect } from 'react';
+import { experimental_useEffectEvent as useEffectEvent } from 'react';
+
+export function useInterval(callback, delay) {
+  const onTick = useEffectEvent(callback);
+  useEffect(() => {
+    const id = setInterval(onTick, delay);
+    return () => clearInterval(id);
+  }, [delay]);
+}
+```
+
+## Challenge 5 of 5:
+
 
