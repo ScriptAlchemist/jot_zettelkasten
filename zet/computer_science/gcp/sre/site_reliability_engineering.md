@@ -152,8 +152,78 @@ the cocoon.
 
 ## Preface
 
-Software engineering has this in common
+Software engineering has this in common with having children: the labor
+**before** the birth is painful and difficult, but the labor **after** the
+birth is where you actually spend most of your effort. Yet software
+engineering as a discipline spends much more time talking about the
+first period as opposed to the second, despite estimates that 40-90% of
+the total costs of a system are incurred after birth. The popular
+industry model that conceives of deployed, operational software as being
+"stabilized" in production, and therefore needing much less attention
+from software engineers, is wrong. Through this lens, then, we see that
+if software engineering tends to focus on designing and building
+software systems, there must be another discipline that focuses on the
+**whole** lifecycle of software objects, from inception, through
+deployment and operation, refinement, and eventual peaceful
+decommissioning. This discipline uses--and needs to use--a wide range of
+skills, but has separate concerns from other kinds of engineers. Today,
+our answer is the discipline Google calls Site Reliability Engineering.
 
+So what exactly is Site Reliability Engineering (SRE)? We admit that
+it's not a particularly clear name for what we do--pretty much every
+site reliability engineer at Google gets asked what exactly that is, and
+what they actually do, on a regular basis.
 
+Unpacking the term a little, first and foremost, SREs are **engineers**.
+We apply the principles of computer science and engineering to the
+design and development of computing systems: generally, large distributed
+ones. Sometimes, our task is writing the software for those systems
+alongside our product development counterparts; sometimes, our task is
+building all the additional pieces those systems need, like backups or
+load balancing, ideally so they can be reused across systems; and
+sometimes, our task is figuring out how to apply existing solutions to
+new problems.
+
+Next, we focus on system **reliability**. Ben Treynor Sloss, Google's VP
+for 24/7 Operations, originator of the term SRE, claims that reliability
+is the most fundamental feature of any product: a system isn't very
+useful if nobody can use it! Because reliability is so critical, SREs
+are focused on finding ways to improve the design and operation of
+systems to make them ore scalable, more reliable and more efficient.
+However, we expend effort in this direction only up to a point: when
+systems are "reliable enough," we instead invest our efforts in adding
+features or building new products.
+
+Finally, SREs are focused on operating **services** built atop our
+distributed computing systems, whether those services are planet-scale
+storage, email for hundreds of millions of users, or where Google
+began, web search. The "site" in our name originally referred to SRE's
+role in keeping the **google.com** website running, though we now run
+many more services, many of which aren't themselves websites--from
+infrastructure such as Bigtable to products for external develops such
+as Google Cloud Platform
+
+Although we have represented SRE as a broad discipline, it is no
+surprise that it arose in the fast-moving world of web services, and
+perhaps in origin owes something to the perculiarities of our
+infrastructure. It is equally no surprise that of all the
+post-deployment characteristics of software that we could choose to
+devote special attention to, reliability is the one we regards as
+primary. The domain of web services, both because the process of
+improving and changing server-side software is comparatively contained,
+and because managing change itself is so tightly coupled with failures
+of all kinds, is a natural platform from which our approach might emerge.
+
+Despite arising at Google, and in the web community more generally, we
+think that this discipline has lessons applicable to other
+communities and other organizations. This book is an attempt to explain
+how we do things: both so that other organizations might make use of
+what we've learned, and so that we can better define the role and what
+the term means. To that end, we have organized the book so that general
+principles and more specific practices are separated where possible, and
+where it's appropriate to discuss a particular topic with
+Google-specific information, we trust that the reader will indulge us in
+this and will not be afraid to draw useful conclusions about their own
+environment.
 
 
