@@ -154,3 +154,46 @@ development tasks, because the service basically runs and repairs
 itself: we want systems that are **automatically**, not just
 **automated**. In practice, scale and new features keeps SREs on their
 toes.
+
+Google's rule of thumb is that an SRE team must spend the remaining 50%
+of its time actually doing development. So how do we enforce that
+threshold? In the first place, we have to measure how SRE time is spent.
+With that measurement in hand, we ensure that the teams consistently
+spending less than 50% of their time on development work change their
+practices. Often this means shifting some of the operations burden back
+to the development team, or adding staff to the team without assigning
+that team additional operational responsibilities. Consciously
+maintaining this balance between ops and development work allows us to
+ensure that SREs have the bandwidth to engage in creative, autonomous
+engineering, while still retaining the wisdom gleaned from the
+operations side of running a service.
+
+We've found that Google SRE's approach to running large-scale systems
+has many advantages. Because SREs are directly modifying code in pursuit
+of making Google's systems run themselves, SRE teams are characterized
+by both rapid innovation and a large acceptance of change. Such teams
+are relatively inexpensive--supporting the same service with an
+ops-oriented team would require a significantly larger number of people.
+Instead, the number of SREs needed to run, maintain, and improve a
+system scales sub-linearly with the size of the system. Finally, not only
+does SRE circumvent the dysfunctionality of the dev/ops split, but this
+structure also improves our product development teams: easy transfers
+between product development and SRE teams cross-train the entire group,
+and improve skills of developers who otherwise may have difficulty
+learning how to build a million-core distributed system.
+
+Despite these net gains, the SRE model is characterized by its own
+distinct set of challenges. One continual challenge Google faces is
+hiring SREs: not only does SRE compete for the same candidates as the
+product development hiring pipeline, but the fact that we set the
+hiring bar so high in terms of both coding and system engineering
+skills means that our hiring pool is necessarily small. As our
+discipline is relatively new and unique, not much industry information
+exists on how to build and manage an SRE team (although hopefully this
+book will make stride in that direction!) And once an SRE team is in
+place, their potentially unorthodox approaches to service management
+require strong management support. For example, the decision to stop
+releases for the remainder of the quarter once an error budget is
+depleted might not be embraced by a product development team unless
+mandated by their management.
+
