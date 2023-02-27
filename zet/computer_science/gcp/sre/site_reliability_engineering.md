@@ -226,4 +226,116 @@ Google-specific information, we trust that the reader will indulge us in
 this and will not be afraid to draw useful conclusions about their own
 environment.
 
+We have also provided some orienting material--a description of Google's
+production environment and a mapping between some of our internal
+software and publicly available software--which should help to
+contextualize what we are saying and make it more directly usable.
 
+Ultimately, of course, more reliability-oriented software and systems
+engineering is inherently good. However, we acknowledge that smaller
+organizations may be wondering how they can best use the experience
+represented here: much like security, the earlier you care about
+reliability, the better. This implies that even though a small
+organization has many pressing concerns and the software choices you
+make may differ from those Google made, it's still worth putting
+lightweight reliability support in place early on, because it's less
+costly to expand a structure later on then it is to introduce one that
+is not present. [Management](./management/management.md) contains a number of best practices for
+training, communication, and meetings that we've found to work well
+for us, many of which should be immediately usable by your organization.
+
+But for sizes between a startup and a multi-national, there probably
+already is someone in your organization who is doing SRE work, without
+it necessarily being called that name, or recognized as such. Another
+way to get started on the path to improving reliability for your
+organization is to formally recognize that work, or to find these people
+and foster what they do--reward it. They are people who stand on the
+cusp between one way of looking at the world and another one: like
+Newton, who is sometimes called not the world's first physicist, but
+the world's last alchemist.
+
+And taking the historical view, who, then, looking back, might be the
+first SRE?
+
+We like to think that Margaret Hamilton, working on the Apollo program
+on loan from MIT, had all the significant traits of the first SRE. In
+her words, "part of the culture was to learn from everyone and
+everything, including from that which one would least expect."
+
+A case in point was when her young daughter Lauren came to work with her
+one day, while some of the team were running mission scenarios on the
+hybrid simulation computer. As young children do, Lauren went exploring,
+and she caused a "mission" to crash by selecting the DSKY keys in an
+unexpected way, alerting the team as to what would happen if the
+pre-launch program, P01, were inadvertently selected by a real astronaut
+during a real mission, during real mid-course. (Launching P01
+inadvertently on a real mission would be a major problem, because it
+wipes out navigation data, and the computer was not equipped to pilot
+the craft with no navigation data.)
+
+With an SRE's instinct, Margaret submitted a program change request to
+add special error checking code in the onboard flight software in case
+an astronaut should, bu accident, happen to select P01 during flight.
+But this move was considered unnecessary by the "higher-ups" as NASA: of
+course, that could never happen! So instead of adding error checking
+code, Margaret updated the missions specifications documentation to say
+the equivalent of "Do not select P01 during flight." (Apparently the
+update was amusing to many on the project, who had been told many times
+that astronauts would not make any mistakes--after all, they were
+trained to be perfect.)
+
+Well, Margaret's suggested safeguard was only considered unnecessary
+until the next mission, on Apollo 8, just days after the specification
+update. During midcourse on the fourth day of flight with the astronauts
+Jim Lovell, William Anders, and Frank Borman on board, Jim Lovell
+selected P01 by mistake--as it happens, on Christmas Day--creating much
+havoc for all involved. This was a critical problem, because in the
+absence of a workaround, no navigation data meant the astronauts were
+never coming home. Thankfully, the documentation update had explicitly
+called this possibility out, and was invaluable in figuring out how to
+upload usable data to recover the mission, with not much time to spare.
+
+As Margaret says, "a thorough understanding of how to operate the
+systems was not enough to prevent human errors," and the change request
+to add error detection and recovery software to the pre-launch program
+P01 was approved shortly afterwards.
+
+Although the Apollo 8 incident occurred decades ago, there is much in
+the preceding paragraphs directly relevant to engineers' lives today,
+and much that will continue to be directly relevant in the future.
+Accordingly, for the systems you look after, for the groups you work in,
+or for the organization you're building, please bear the SRE Way in
+mind: thoroughness and dedication, belief in the value or preparation
+and documentation, and an awareness of what could go wrong, coupled with
+a strong desire to prevent it. Welcome to our emerging profession!
+
+> ## How to Read This Book
+>
+> This book is a series of essay written by members and alumni of
+Google's Site reliability Engineering organization. It's much more like
+conference proceedings than it is like a standard book by an author or a
+small number of authors. Each chapter is intended to be read as a apart
+of a coherent whole, but a good deal can be gained by reading on
+whatever subject particularly interests you. (If there are other
+articles that support or inform the text, we reference them so you can
+follow up accordingly.)
+>
+> You don't need to read in an y particular order, though we'd suggest
+al least starting with Chapters The Production Environment at Google,
+from the Viewpoint of an SRE and Embracing Risk, which describe Google's
+production environment and outline how SRE approaches risk,
+respectively. (Risk is, in many ways, the key quality of our
+profession.) Reading cover-to-cover is, of course, also useful and
+possible; our chapters are grouped thematically, into Principles
+([Principles](./principles/principles.md)), Practices
+([Practices](./practices/practices.md)), and Management
+([Management](./management/management.md)). Each has a small
+introduction that highlights what the individual pieces are about, and
+references other articles published by Google SREs, covering specific
+topics in more detail. Additionally, the companion website the this
+book, `https://g.co/SREBook`, has a number of helpful resources.
+>
+> We hope this will be at least useful and interesting to you as putting
+it together was for us.
+>
+> - The Editors
