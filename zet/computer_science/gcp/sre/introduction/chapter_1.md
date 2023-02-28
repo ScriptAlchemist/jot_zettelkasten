@@ -456,3 +456,14 @@ meet a capacity target **at a specific response speed**, and thus are
 keenly interested in a service's performance. SREs and product
 developers will (and should) monitor and modify a service to improve its
 performance, thus adding capacity and improving efficiency.
+
+## The End of the Beginning
+
+Site Reliability Engineering represent a significant break from existing
+industry best practices for managing large, complicated service.
+Motivated originally by familiarity--"as a software engineer, this is
+how I would want to invest my time to accomplish a set of repetitive
+tasks"--it had become more: a set of principles, a set of practices, a
+set of incentives, and a field of endeavor within a larger software
+engineering discipline. The rest of the book explores the SRE Way in
+detail.
