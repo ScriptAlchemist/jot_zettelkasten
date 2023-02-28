@@ -16,7 +16,7 @@ with proprietary power distribution, cooling, networking, and compute
 hardware (see
 [[Bar13]](https://sre.google/sre-book/bibliography#Bar13)). Unlike
 "standard" co-location data centers, the compute hardware in a
-Google-designed data center is the same across the board. To eliminate
+Google-designed data center is the same across the board[^9]. To eliminate
 the confusion between server hardware and server software, we use the
 following terminology throughout the book:
 
@@ -87,7 +87,7 @@ data-center infrastructure.
 **Borg**, illustrated in `Figure 2-2`, is a distributed cluster
 operating system
 [[Ver15](https://sre.google/sre-book/bibliography#Ver15)], similar to
-Apache Mesos. Borg manages its jobs at the cluster level.
+Apache Mesos[^10]. Borg manages its jobs at the cluster level.
 
 ![Figure_2_2](../../gcp-img/figure_2_2.jpg)
 
@@ -243,7 +243,7 @@ and statistics for a given task.
 
 All of Google's services communicate using a Remote Procedure Call (RPC)
 infrastructure named **Stubby**; an open source version, gRPC, is
-available. Often, and RPC call is made even when a call to a subroutine
+available[^11]. Often, and RPC call is made even when a call to a subroutine
 in the local program needs to be performed. This makes it easier to
 refactor the call into a different server if more modularity is needed,
 or when a server's codebase grows. GSLB can load balance RPCs in the
@@ -253,7 +253,7 @@ A server receives RPC requests from its **frontend** and sends RPCs to
 its **backend**. In traditional terms, the frontend is called the client
 and the backend is called the server.
 
-Data is transferred to and from an RPC using **protocol buffers**, often
+Data is transferred to and from an RPC using **protocol buffers**[^12], often
 abbreviated to "protobufs", which are similar to Apache's Thrift
 Protocol buffers have many advantages over XML for serializing
 structured data: they are simpler to use, 3 to 10 times smaller, 20 to
@@ -364,7 +364,7 @@ tasks. However, the following considerations mean that we need at least
 * During updates, one task at a time will be unavailable, leaving 36
   tasks.
 * A machine failure might occur during a task update, leaving only 35
-  tasks, just enough to server peak load.
+  tasks, just enough to serve peak load[^13].
 
 A closer examination of user traffic shows our peak usage is distributed
 globally: 1,430 QPS from North America, 290 from South America, 1,400
@@ -395,17 +395,22 @@ refer to later.
 
 ---
 
-* Well, **roughly** the same. Mostly. Except for the stuff that is
+[^9]: Well, **roughly** the same. Mostly. Except for the stuff that is
   different. Some data centers end up with multiple generations of
   compute hardware, and sometimes we augment data centers after they are
   built. But for the most part, our data center hardware is homogeneous.
-* Some readers may be more familiar with Borg's descendant,
+
+[^10]: Some readers may be more familiar with Borg's descendant,
   Kubernetes-an open source Container Cluster orchestration framework
   started by Google in 2014; see `https://kubernetes.io`
-* Protocol buffers are a language-neutral, platform-neutral extensible
+
+[^11]: See https://grpc.io
+
+[^12]: Protocol buffers are a language-neutral, platform-neutral extensible
   mechanism for serializing structured data. For more details see
   `https://developers.google.com/protocol-buffers/`
-* We assume the probability of two simultaneous task failures in our
+
+[^13]: We assume the probability of two simultaneous task failures in our
   environment is low enough to be negligible. Single points of failure,
   such as top-of-rack switches or power distribution, may make this
   assumption invalid in other environments.
