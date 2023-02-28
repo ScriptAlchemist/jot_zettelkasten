@@ -363,4 +363,49 @@ tasks. However, the following considerations mean that we need at least
 
 * During updates, one task at a time will be unavailable, leaving 36
   tasks.
-*
+* A machine failure might occur during a task update, leaving only 35
+  tasks, just enough to server peak load.
+
+A closer examination of user traffic shows our peak usage is distributed
+globally: 1,430 QPS from North America, 290 from South America, 1,400
+from Europe and Africa, and 350 from Asia and Australia. Instead of
+locating all backends at one site, we distribute them across the USA,
+South America, Europe, and Asia. Allowing for N+2 redundancy per region
+means that we end up with 17 tasks in the USA, 16 in Europe, and 6 in
+Asia. However, we decide to use 4 tasks (instead of 5) in South America,
+to lower the overhead of N+2 to N+1. In this case, we're willing to
+tolerate a small risk of higher latency in exchange for lower hardware
+costs: if GSLB redirects traffic from one continent to another when our
+South American data center is over capacity, we can save 20% of the
+resources we'd spend on hardware. In the larger regions, we'll spread
+tasks across two or three clusters for extra resiliency.
+
+Because the backends need to contact the Bigtable holding the data, we
+need to also design this storage element strategically. A backend in
+Asia contacting a Bigtable in the USA adds a significant amount of
+latency, so we replicate the Bigtable in each region. Bigtable
+replication helps us in two ways: it provides resilience should a
+Bigtable server fail, and it lowers data-access latency. While Bigtable
+only offers eventual consistency, it isn't a major problem because we
+don't need to update the contents often.
+
+We've introduced a lot of terminology here; while you don't need to
+remember it all, it's useful for framing many of the other systems we'll
+refer to later.
+
+---
+
+* Well, **roughly** the same. Mostly. Except for the stuff that is
+  different. Some data centers end up with multiple generations of
+  compute hardware, and sometimes we augment data centers after they are
+  built. But for the most part, our data center hardware is homogeneous.
+* Some readers may be more familiar with Borg's descendant,
+  Kubernetes-an open source Container Cluster orchestration framework
+  started by Google in 2014; see `https://kubernetes.io`
+* Protocol buffers are a language-neutral, platform-neutral extensible
+  mechanism for serializing structured data. For more details see
+  `https://developers.google.com/protocol-buffers/`
+* We assume the probability of two simultaneous task failures in our
+  environment is low enough to be negligible. Single points of failure,
+  such as top-of-rack switches or power distribution, may make this
+  assumption invalid in other environments.
