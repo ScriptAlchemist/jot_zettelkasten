@@ -45,4 +45,45 @@ than the previous increment. The costliness has two dimensions:
 
 IN SRE, we manage service reliability largely by managing risk. We
 conceptualize risk as a continuum. We give equal importance to figuring
-out how to engineer greater reliability into Google systems and 
+out how to engineer greater reliability into Google systems and
+identifying the appropriate level of tolerance for the services we run.
+Doing so allows us to perform a cost/benefit analysis to determine, for
+example, where on the (nonlinear) risk continuum we should place Search,
+Ads, Gmail, or Photos. Our goal is the explicitly align the risk taken
+by a given service with the risk the business is willing the bear. We
+strive to make a service reliable enough, but no **more** reliable than
+it needs to be. That is, when we set an availability target of 99.99%,
+we want to exceed it, but not by much: that would waste opportunities to
+add features to the system, cleanup technical debt, or reduce its
+operational costs. In a sense, we view the availability target as both a
+minimum and a maximum. The key advantage of this framing is that it
+unlocks explicit, thoughtful risk taking.
+
+## Measuring Service Risk
+
+As standard practice at Google, we are often best served by identifying
+an objective metric to represent the property of a system we wan to
+optimize. By setting a target, we can assess our current performance and
+track improvements or degredations over time. For service risk, it is
+not immediately clear how to reduce all of the potential factors into a
+single metric. Service failures can have many potential effects,
+including user dissatisfaction, harm, or loss of trust; direct or
+indirect revenue loss; brand or reputational impact; and undesirable
+press coverage. Clearly, some of these factors are very hard to measure.
+To make this problem tractable and consistent across many types of
+systems we run, we focus on **unplanned downtime**.
+
+For most services, the most straightforward way of representing risk
+tolerance is in terms of the acceptable level of unplanned downtime.
+Unplanned downtime is captured by the desired level of **service
+availability**, usually expressed in terms of the number of "nines" we
+would like to provide: 99.9%, 99.99%, or 99.999% availability. Each
+additional nine corresponds to an order of magnitude improvement toward
+100% availability. For serving systems, this metric is traditionally
+calculated based on the proportion of system uptime (see [Time-based
+availability](https://sre.google/sre-book/embracing-risk/#risk-management_measuring-service-risk_time-availability-equation)).
+
+## Time-based Availability
+
+Using this formula over the period of a year, we can calculate the
+accept
