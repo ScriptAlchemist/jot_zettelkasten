@@ -91,4 +91,28 @@ certain values actually drives people away- see "Speed Matters"
 details.)
 
 Again, this is more subtle than it might at first appear, in that those
-two SLIs-QPS an 
+two SLIs-QPS and latency-might be connected behind the scenes: higher
+QPS often leads to larger latencies, and it's common for services to
+have a performance cliff beyond some load threshold.
+
+Choosing and publishing SLOs to users sets expectations about how a
+service will perform. This strategy can reduce unfounded complaints to
+service owners about, for example, the service being slow. Without an
+explicit SLO, users often develop their own beliefs about desired
+performance, which may be unrelated to the beliefs held by the people
+designing and operating the service, when users incorrectly believe
+that a service will be more available than it actually is (as happened
+with Chubby: see `The Global Chubby Planned OUtage`), and under-reliance,
+when prospective users believe a system is flakier and less reliable
+than it actually is.
+
+### The Global Chubby Planned Outage
+
+> Written by Marc Alvidrez
+
+Chubby [[Bur06]](https://sre.google/sre-book/bibliography#Bur06) is
+Google's lock service for loosely coupled distributed systems. In the
+global case, we distribute Chubby instances such that each replica is in
+a different geographical region. Over time, we found that the failures
+of the global instance of Chubby consistently generated service outages,
+many of which were visible to end users.
