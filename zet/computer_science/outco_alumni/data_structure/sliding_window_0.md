@@ -204,10 +204,83 @@ k)`. Which is a bit more than I would like too shoot for. I'd prefer is
 just stick to `O(n)`. How can we remove the need for the extra loops? We
 must keep track of it a different way.
 
+What could that different way possibly be? How about some sort of
+memory. Some soft of storage that we can check against and create
+something more constant.
+
+There will be a give and take here. If the value of `k = 2` and `n =
+4`. The amount of iterations would only be around `7` function calls.
+This obviously increases at `O(n * k)` like mentioned earlier. If the
+numbers become `k = 3, n = 3000`. That seems a little much to do `3000 *
+3 = 9000` Well not much for a computer. Let's think about running this
+in a serverless function. Something where the cost goes up with the time
+spend. `6000` wasteful calls isn't good. It's `2/3` more than it should
+be. How can we fix this? How can we make it more constant? What is this
+memory that we would like to accomplish. How does it make the search
+constant?
+
+Let's use a `hashMap` with a `const mem = new Map();`
+
+What makes the hash map constant. Well the way that the hash map is
+created is interesting. Imagine a key value structure that is always in
+order. We can check if the value "lives" in a certain area.
+
+What does it mean to "live" in a certain area of the hash map? How does
+it stay in order?
+
+Let's talk about this at a very high level. Abstract away to hashing
+functions and other smaller features while we focus on the bigger
+parts.
+
+Let's think about an array at first `[0,1,2,3,4]` when we use this we
+know that it's in order. The index would be the same as the values
+entered. `0 index 0`, `1 index 1`. If we change the location of `[1,0]`
+then `1 index 0` and `0 index 1`. The index is always in order.
+
+How do we get the numberlike value for the hash map? Well we do exactly
+that the object is. We hash it. We can hash any object, array, value,
+program. Where it runs a specific function to pull a code. The goal is
+to have the code `hash` unique values for everything it produces. If you
+change `1` bit. The whole hash is different.
+
+So when the value the `equal` the hash would become the same.
+
+Now let's think about this a little bit more.
+
+If we has my current `.bashrc` file. We get this string.
+
+`B519B4CFFCF125CC536F5E64D1673FDD31439FBCA53B6340F6DD1C921041CEBB`
+
+Now let's `hash` my `.vimrc` file. We get this string.
+
+`C9F308225A3B1CD6C2F94B0CDADDC27C37A1A88C71861E62657577BB79E8E4D5`
+
+Do you see how it can be used now?
 
 
+`[B519B4CFFCF125CC536F5E64D1673FDD31439FBCA53B6340F6DD1C921041CEBB,
+C9F308225A3B1CD6C2F94B0CDADDC27C37A1A88C71861E62657577BB79E8E4D5]` if it
+was in order from `[A-Za-z]` and `[0-9]`.
 
+But how do we know where it is again when we look for it?
 
+Well we would have to `re-hash` it every time. But wouldn't that get
+expensive? Well, no. That would allow us to reach a constant action.
+Even though there are 3 or more internal actions to make hash maps to
+work. It will become `O(1)` because it will maintain that constant
+state. We could easily use an object for speed. Checking the individual
+object location. Let's just think about what we might want to manage in
+memory and what we might want to check. We just wanted a little
+explanation of what a hash map would be. Compared to an object
+structure. That would have to search over keys to find the key that
+matches. Although there could be an internal hash map inside of the
+object constructor.
+
+Now that we have out data structure picked out. Let's think about how we
+might want to use it.
+
+We need to keep track of the highest value. Without having to loop over
+each of the values over again.
 
 
 
