@@ -282,12 +282,218 @@ might want to use it.
 We need to keep track of the highest value. Without having to loop over
 each of the values over again.
 
+Let's create a queue data structure using a map:
+
+```javascript
+function Queue() {
+  const queue = new Map();
+  let front = 0;
+
+  function enqueue(element) {
+    queue.set(front++, element);
+  }
+
+  function dequeue() {
+    if (queue.size === 0) return null;
+    const first = queue.get(0);
+    queue.delete(0);
+    front--;
+    return first;
+  }
+
+  function peek() {
+    if (queue.size === 0) return null;
+    return queue.get(0);
+  }
+
+  function clear() {
+    queue.clear();
+    front = 0;
+  }
+
+  function size() {
+    return queue.size;
+  }
+
+  function* [Symbol.iterator](https://lite.duckduckgo.com/lite?kd=-1&kp=-1&q=Symbol.iterator) {
+    for (let i = 0; i < queue.size; i++) {
+      yield queue.get(i);
+    }
+  }
+
+  return {
+    enqueue,
+    dequeue,
+    peek,
+    clear,
+    size
+    [Symbol.iterator],
+  };
+}
+```
+
+Now let's use out `Queue`:
+
+```javascript
+const queue = new Queue();
+queue.enqueue("A");
+queue.enqueue("B");
+queue.enqueue("C");
+console.log([...queue]); // ["A", "B", "C"]
+// This works because of the [Symbol.iterator]
+console.log(queue.peek()); // "A"
+console.log(queue.dequeue()); // "A"
+console.log(queue.dequeue()); // "B"
+console.log(queue.size()); // 1
+queue.clear();
+console.log(queue.size()); // 0
+```
+
+That's is the basic use of the data structure. I think it's missing
+something. We want it to have a limit many can fit into the queue. While
+also maintaining the highest number in the queue.
+
+How can we add that?
+
+Honestly let's gut it. Make it streamlined into a better structure for our task. We can call it a window. All we need is the enqueue and dequeue at first. We need to add more to this structure now.
 
 
+```javascript
+function Window(max) {
+  const queue = new Map(),
+    maxQueue = max;
+  let front = 0;
 
+  function enqueue(element) {
+    if (queue.size === max) dequeue();
+    queue.set(front++, element);
+  }
 
+  function dequeue() {
+    if (queue.size === 0) return null;
+    const first = queue.get(0);
+    queue.delete(0);
+    front--;
+    return first;
+  }
 
+  return {
+    enqueue,
+    dequeue,
+  };
+}
+```
 
+I'm going to give an updated version with a lot more here:
 
+```javascript
+/**
+ * @param {number} max
+ * @return {function} enqueue
+ * @return {Map} mem
+ * @return {number} highest_value
+*/
+function Window(max) {
+  this.queue = new Map();
+  this.front = 0;
+  this.highestValue;
 
+  this.enqueue = (element) => {
+    console.log('queueing:', element);
+    this.queue.set(this.front++, element);
+    if (this.queue.size > max) this.dequeue();
+    // TODO: Figure out highest number.
+  };
 
+  this.dequeue = () => {
+    if (this.queue.size === 0) return null;
+    const oldestKey = this.queue.keys().next().value;
+    console.log('removing:', this.queue.get(oldestKey));
+    this.queue.delete(oldestKey);
+  };
+
+  return {
+    enqueue: this.enqueue,
+    mem: this.queue,
+    highest_value: this.highestValue
+  };
+}
+
+/**
+ * @param {number[]} nums
+ * @param {number} k
+ * @return {number[]}
+ */
+const maxSlidingWindow = function(nums, k) {
+  const memory = new Window(k);
+  let i = 0;
+  const returnAry = [];
+  const loopTill = nums.length > k ? nums.length + 1 - k : 1;
+
+  while (i < loopTill) {
+    let highest_val;
+    if (memory.mem.size === 0) {
+      memory.enqueue(nums[i]);
+      memory.enqueue(nums[i + 1]);
+      highest_val = memory.enqueue(nums[i + 2]);
+    } else {
+      highest_val = memory.enqueue(nums[i + 2]);
+    }
+    returnAry.push(highest_val);
+    i++;
+  }
+  console.log(memory.mem);
+  return returnAry;
+};
+
+maxSlidingWindow([1,3,-1,-3,5,3,6,7], 3);
+```
+
+This has everything setup so far. The only thing that you would need to do is the figuring out the highest number. So how do we want to do this?
+
+There is a bug that I found. Let's fix it:
+
+```javascript
+/**
+ * @param {number[]} nums
+ * @param {number} k
+ * @return {number[]}
+ */
+const maxSlidingWindow = function(nums, k) {
+  const memory = new Window(k);
+  let i = 0;
+  const returnAry = [];
+  const loopTill = nums.length > k ? nums.length + 1 - k : 1;
+
+  while (i < loopTill) {
+    let highest_val;
+    if (memory.mem.size === 0) {
+      for (let kLoop = 0; kLoop <= k - 1; kLoop++) {
+        highest_val = memory.enqueue(nums[i + kLoop]);
+      }
+    } else {
+      highest_val = memory.enqueue(nums[i + k - 1]);
+    }
+    returnAry.push(highest_val);
+    i++;
+  }
+  console.log(memory.mem);
+  return returnAry;
+};
+
+maxSlidingWindow([1,3,-1,-3,5,3,6,7], 4);
+```
+
+If you notice what changed it is:
+
+```javascript
+if (memory.mem.size === 0) {
+  for (let kLoop = 0; kLoop <= k - 1; kLoop++) {
+    highest_val = memory.enqueue(nums[i + kLoop]);
+  }
+} else {
+  highest_val = memory.enqueue(nums[i + k - 1]);
+}
+```
+
+This allows for the `k` to be dynamic.
