@@ -379,4 +379,19 @@ In choosing what to monitor, keep the following guidelines in mind:
 * Signals that are collected, but not exposed in any pre-baked dashboard
   nor used by any alert, are candidates for removal.
 
+In Google's experience, basic collection and aggregation of metrics, paired with
+alerting and dashboards, has worked well as a relatively standalone system.
+(In fact Google's monitoring systems is broken up into several binaries, but
+typically people learn about all aspects of these binaries.) It can be
+tempting to combine monitoring with other aspects of inspecting complex
+systems, such as detailed system profiling, single-process debugging,
+tracking details about exceptions or crashes, load testing, log collection and
+analysis, or traffic inspection. While most of these subjects share
+commonalities with basic monitoring, blending together too many results in
+overly complex and fragile systems. As in many other aspects of software
+engineering, maintaining distinct systems with clear, simple, loosely coupled
+points of integration is a better strategy (for example, using web APIs for
+pulling summary data in a format that can remain constant over an extended
+period of time).
+
 
