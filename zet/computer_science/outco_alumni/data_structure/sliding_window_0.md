@@ -13,6 +13,8 @@ sliding window moves right by one position.
 
 Return the max sliding window.
 
+![Sliding Window Maximum](../outco_img/Sliding_Window_Maximum.png)
+
 ### Example 1:
 
 ```
@@ -54,6 +56,9 @@ const maxSlidingWindow = function(nums, k) {
 
 };
 ```
+
+![Window DataStructure](../outco_img/Window_ds.png)
+![k Loop](../outco_img/k_loop.png)
 
 This is how the project would be setup.
 
@@ -497,3 +502,14 @@ if (memory.mem.size === 0) {
 ```
 
 This allows for the `k` to be dynamic.
+
+We should look deeper into the window section with a graphic before we
+create the code. In this next image there is a visual representation of
+the values moving through the window. Where we maintain a highest value
+and a 2nd highest value. Watching how the values move around with the
+colors.
+
+Next we need to add in the index and the value positions.
+
+![Sliding Window Maximum Color Coded
+Window](../outco_img/Sliding_Window_Maximum_Color_Coded_Window.png)
