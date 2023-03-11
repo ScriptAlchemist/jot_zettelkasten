@@ -107,4 +107,4 @@ const setValue = value => {
   value at the `key`. It sets the hook state with the `value`. To be
   returned as `valueProxy`.
 
-* The function to update it is returned as well: `setValue
+* The function to update it is returned as well: `setValue`

@@ -27,7 +27,7 @@ export function usePrefersDarkMode() {
 
 * The obvious imports: `import { useEffect, useState } from 'react';`
 
-* The basic function structure: `javascript export function usePrefersDarkMode() {}`
+* The basic function structure: `export function usePrefersDarkMode() {}`
 
 * Setting values and value setter: `const [value, setValue] = useState(true);`
 
@@ -58,8 +58,11 @@ useEffect(() => {
 
 * We always remove the event listeners we added:
   - `return () => mediaQuery.removeEventListener('change', handler);`
+  - When this component is destroyed the `useEffect` will run this
+    return function.
 
 * `[]` no dependencies, but it does load once. Using no `[]` would force
   a re-render every time.
 
-
+* Returns the `value`. It is auto set to `true`. Which would be `dark
+  mode`

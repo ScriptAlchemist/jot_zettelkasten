@@ -235,3 +235,31 @@ on) at a very abstract level. Work done in the latter tends to be more
 reusable and be more of a common platform than the former, but the
 complexity of our production environment sometimes means that the former
 is the most immediately traceable option.
+
+### A Hierarchy of Automation Classes
+
+Although all of these automation steps are valuable, and indeed an
+automation platform is valuable in and of itself, in an ideal world, we
+wouldn't need externalized automation. In fact, instead of having a
+system that has to have external glue logic, it would be even better to
+just have a system that needs `no glue logic at all`, not just because
+internalization is more efficient (although such efficiency is useful),
+but because it has been designed to not need glue logic in the first
+place. Accomplishing that involves taking the use cases for glue
+logic-generally "first order" manipulations of a system, such as adding
+accounts or performing system turnup-and finding a way to handle those
+use cases directly within the application.
+
+As a more detailed example, most turnup automation at Google is
+problematic because it ends up being maintained separately from the core
+system and therefore suffers from "bit rot," i.e., not changing when the
+underlying systems change. Despite the best of intentions, attempting to
+more tightly couple the two (turnup automation and the core system)
+often fails due to unaligned priorities, as product developers will, not
+unreasonably, resist a test deployment requirement for every change.
+Secondly, automation that is crucial but only executed at infrequent
+intervals and therefore difficult to test is often particularly fragile
+because of the extended feedback cycle. Cluster failover is one classic
+example of infrequently executed automation: failovers might only occur
+every few months, or infrequently enough that inconsistencies between
+instances are introduced. The evolution of automation follows a path.
