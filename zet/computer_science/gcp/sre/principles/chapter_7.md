@@ -566,6 +566,78 @@ regarding automation modules occurred between people in the same room,
 cluster turnups could happen in a much shorter time. Finally, we had our
 competent, accurate, and timely automation process!
 
+But this state didn't last long. The real world is chaotic: software,
+configuration, data, etc. changed, resulting in over a thousand separate
+changes a day to affected systems. The people most affected by
+automation bugs were longer domain experts, so the automation became
+less relevant (meaning that new steps were missed) and less competent
+(new flags might have caused automation to fail). However, it took a
+while for this drop in quality to impact velocity.
+
+Automation code, like unit test code, dies when the maintaining team
+isn't obsessive about keeping the code in sync with the codebase it
+covers. The world changes around the code: the DNS team adds new
+configuration options, the storage team changes their package names, and
+the networking team needs to support new devices.
+
+By relieving teams who ran services of the responsibility to maintain
+and run their automation code, we created ugly organizational
+incentives:
+
+* A team whose primary task is to speed up the current turnup has no
+  incentive to reduce the technical debt of the service-owning team
+  running the service in production later.
+* A team not running automation has no incentive to build systems that
+  are easy to automate.
+* A product manager whose schedule is not affected by low-quality
+  automation will always prioritize new features over simplicity and
+  automation.
+
+The most functional tools are usually written by those who use them. A
+similar argument applies to why product development teams benefit from
+keeping at least some operational awareness of their systems in
+production.
+
+Turnups were again high-latency inaccurate, and incompetent-the worst of
+all worlds. However, an unrelated security mandate allowed us out of
+this trap. Much of distributed automation relied at that time on SSH.
+This is clumsy from a security perspective, because people must have
+root on many machines to run most commands. A growing awareness of
+advanced, persistent security threats drove us to reduce the privileges
+SREs enjoyed to the absolute minimum they needed to do their jobs. We
+had to replace our use of sshd with an authenticated, ACL-driven,
+RPC-based Local Admin Daemon, also known as Admin Servers, which had
+permissions to perform these local changes. As a result, no one could
+install or modify a server without an audit trail. Changes to the Local
+Admin Daemon and the Package Repo were gated on code reviews, making it
+very difficult for someone to exceed their authority; giving someone the
+access to install packages would not let the view colocated logs. The
+Admin Server logged the RPC requestor, any parameters, and the results
+of all RPCs to enhance debugging and security audits.
+
+### Service-Oriented Cluster-Turnup
+
+In the next iteration, Admin Servers became part of service teams'
+workflows, both as related to the machine-specific Admin Servers (for
+installing packages and rebooting) and cluster-level Admin Servers (for
+actions like draining or turning up a service). SREs moved from writing
+shell scripts in their home directories to building peer-reviewed RPC
+servers with fine-grained ACLs.
+
+Later on, after the realization that turnup processes had to be owned by
+the teams that owned the services fully sank in, we saw this as a way to
+approach cluster turnup as a Service-Oriented Architecture (SOA)
+problem: service owners would be responsible for creating an Admin
+Server to handle cluster turnup/turndown RPCs, sent by the system that
+knew when clusters were ready. In turn, each team would provide the
+contract (API) that the turnup automation needed, while still being free
+to change the underlying implementation. As a cluster reached
+"network-ready," automation sent an RPC to each Admin Server that played
+a part in turning up the cluster.
+
+We now have a low-latency, competent, and accurate process; most
+importantly, this process has stayed strong as the rate of change, the
+number of teams, and the number of services seem to double each year.
 
 
 

@@ -49,6 +49,37 @@ This example is:
 
 We should dive a bit deeper into each of them.
 
+I would first like to bring up the loop that we plan to be using:
+
+```javascript
+function processData(input) {
+  const lines = input.trim().split('\n');
+  for (let i = 0; i < lines.length; i++) {
+    console.log(lines[i]);
+    console.log(i);
+  }
+}
+```
+
+This is because the data comes in in a chunk.
+
+```
+S;V;iPad
+C;M;mouse pad
+C;C;code swarm
+S;C;OrangeHighlighter
+Your Output (stdout)
+S;V;iPad
+0
+C;M;mouse pad
+1
+C;C;code swarm
+2
+S;C;OrangeHighlighter
+3
+```
+
+
 ### `S;M;plasticCup()`
 
 ![plasticCup](./hacker_img/camel_case_4_s_m_plasticcup.png)
