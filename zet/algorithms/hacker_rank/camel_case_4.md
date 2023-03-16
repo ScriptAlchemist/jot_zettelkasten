@@ -2,8 +2,18 @@
 
 > Justin Bender
 
-![Camel Case
-Question](./hacker_img/camel_case_4/camel_case_4_question.png)
+## Question
+
+![Camel Case Question](./hacker_img/camel_case_4/camel_case_4_question.png)
+
+### Input & Output Format
+
+![Input & output format](./hacker_img/camel_case_4/camel_case_4_input_output_format.png)
+
+### Examples & Key
+
+![Examples and Key](./hacker_img/camel_case_4/camel_case_4_examples_key.png)
+
 
 ![Camel Case 4 Explaination Diagram](./hacker_img/camel_case_4/camel_case_4.png)
 
@@ -23,15 +33,19 @@ functions around each `key`.
 
 ### Keys
 
+#### Combine or Split
+
 * `S`: split
 * `C`: combine
+
+#### Method, Class or Variable
 
 * `M`: method
 * `C`: Class
 * `V`: Variable
 
 
-![Pipe using keys to separate functions](./hacker_img/camel_case_4/camel_case_4_pipeline_1.png)
+![Pipe using keys to separate functions](./hacker_img/camel_case_4/camel_case_4_pipeline_character.png)
 
 If you notice there around around 6 different variations possible. All
 of them included inside of this pipeline example.
