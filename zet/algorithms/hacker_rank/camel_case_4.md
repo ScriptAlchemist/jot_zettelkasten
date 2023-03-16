@@ -96,8 +96,38 @@ S;C;OrangeHighlighter
 3
 ```
 
+But why would be split the chunk? That's too much work. Can't we just
+analyse the string and output values. Almost like we are using a window
+into the string.
+
+We could almost imagine that the input is:
+
+```
+S;M;plasticCup()\nC;V;mobile phone\nC;C;coffee machine\nS;C;LargeSoftwareBook\nC;M;white sheet of paper\nS;V;pictureFrame\n
+```
+
+Which makes a bit more sense when we look at it. Then we will be moving
+over 1 window block at a time
 
 ### `S;M;plasticCup()`
+
+1) [S]: Split words
+
+```
+[S];M;plasticCup()\nC;V;mobile phone\nC;C;coffee machine\nS;C;LargeSoftwareBook\nC;M;white sheet of paper\nS;V;pictureFrame\n
+```
+
+2) [;]: filler
+
+```
+S[;]M;plasticCup()\nC;V;mobile phone\nC;C;coffee machine\nS;C;LargeSoftwareBook\nC;M;white sheet of paper\nS;V;pictureFrame\n
+```
+
+3) [M]: The word is a method
+
+```
+S[;]M;plasticCup()\nC;V;mobile phone\nC;C;coffee machine\nS;C;LargeSoftwareBook\nC;M;white sheet of paper\nS;V;pictureFrame\n
+```
 
 ![plasticCup](./hacker_img/camel_case_4/camel_case_4_s_m_plasticcup.png)
 
