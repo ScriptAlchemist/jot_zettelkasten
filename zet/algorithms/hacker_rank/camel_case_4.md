@@ -109,24 +109,116 @@ S;M;plasticCup()\nC;V;mobile phone\nC;C;coffee machine\nS;C;LargeSoftwareBook\nC
 Which makes a bit more sense when we look at it. Then we will be moving
 over 1 window block at a time
 
+> Key:
+> index #): information
+> [letter]: window
+>
+> Example:
+>
+> [S];M;theWorld()
+
 ### S;M;plasticCup()
 
-1) `[S]`: Split words
+
+0) `[S]`: Split words
+  - `const action = (input[0] === 'S') ? 'split' : 'combine'`
 
 ```
 [S];M;plasticCup()\nC;V;mobile phone\nC;C;coffee machine\nS;C;LargeSoftwareBook\nC;M;white sheet of paper\nS;V;pictureFrame\n
 ```
 
-2) `[;]`: filler
+1) `[;]`: filler/skip
 
 ```
 S[;]M;plasticCup()\nC;V;mobile phone\nC;C;coffee machine\nS;C;LargeSoftwareBook\nC;M;white sheet of paper\nS;V;pictureFrame\n
 ```
 
-3) `[M]`: The word is a method
+2) `[M]`: The word is a method
+  - `const wordType = (input[2] === 'M') ? 'method' : (input[2] === 'C') ? 'class' : 'variable';`
 
 ```
-S[;]M;plasticCup()\nC;V;mobile phone\nC;C;coffee machine\nS;C;LargeSoftwareBook\nC;M;white sheet of paper\nS;V;pictureFrame\n
+S;[M];plasticCup()\nC;V;mobile phone\nC;C;coffee machine\nS;C;LargeSoftwareBook\nC;M;white sheet of paper\nS;V;pictureFrame\n
+```
+
+3) `[;]`: filler/skip
+
+```
+S;M[;]plasticCup()\nC;V;mobile phone\nC;C;coffee machine\nS;C;LargeSoftwareBook\nC;M;white sheet of paper\nS;V;pictureFrame\n
+```
+
+4) `[p]`: starting first word, index is `4`
+  - `let wordStartIndex = 4`
+
+```
+S;M;[p]lasticCup()\nC;V;mobile phone\nC;C;coffee machine\nS;C;LargeSoftwareBook\nC;M;white sheet of paper\nS;V;pictureFrame\n
+```
+
+5) `[l]`: continue;
+
+```
+S;M;p[l]asticCup()\nC;V;mobile phone\nC;C;coffee machine\nS;C;LargeSoftwareBook\nC;M;white sheet of paper\nS;V;pictureFrame\n
+```
+
+6) `[a]`: continue;
+
+```
+S;M;pl[a]sticCup()\nC;V;mobile phone\nC;C;coffee machine\nS;C;LargeSoftwareBook\nC;M;white sheet of paper\nS;V;pictureFrame\n
+```
+
+7) `[s]`: continue;
+
+```
+S;M;pla[s]ticCup()\nC;V;mobile phone\nC;C;coffee machine\nS;C;LargeSoftwareBook\nC;M;white sheet of paper\nS;V;pictureFrame\n
+```
+
+8) `[t]`: continue;
+
+```
+S;M;plas[t]icCup()\nC;V;mobile phone\nC;C;coffee machine\nS;C;LargeSoftwareBook\nC;M;white sheet of paper\nS;V;pictureFrame\n
+```
+
+9) `[i]`: continue;
+
+```
+S;M;plast[i]cCup()\nC;V;mobile phone\nC;C;coffee machine\nS;C;LargeSoftwareBook\nC;M;white sheet of paper\nS;V;pictureFrame\n
+```
+
+10) `[c]`: continue;
+
+
+```
+S;M;plasti[c]Cup()\nC;V;mobile phone\nC;C;coffee machine\nS;C;LargeSoftwareBook\nC;M;white sheet of paper\nS;V;pictureFrame\n
+```
+
+11) `[C]`: Capital Letter indicates a new word. Index 11 is when word 2
+    starts
+
+```
+S;M;plastic[C]up()\nC;V;mobile phone\nC;C;coffee machine\nS;C;LargeSoftwareBook\nC;M;white sheet of paper\nS;V;pictureFrame\n
+```
+
+```
+S;M;plasticC[u]p()\nC;V;mobile phone\nC;C;coffee machine\nS;C;LargeSoftwareBook\nC;M;white sheet of paper\nS;V;pictureFrame\n
+```
+
+```
+S;M;plasticCu[p]()\nC;V;mobile phone\nC;C;coffee machine\nS;C;LargeSoftwareBook\nC;M;white sheet of paper\nS;V;pictureFrame\n
+```
+
+```
+S;M;plasticCup[(])\nC;V;mobile phone\nC;C;coffee machine\nS;C;LargeSoftwareBook\nC;M;white sheet of paper\nS;V;pictureFrame\n
+```
+
+```
+S;M;plasticCup([)]\nC;V;mobile phone\nC;C;coffee machine\nS;C;LargeSoftwareBook\nC;M;white sheet of paper\nS;V;pictureFrame\n
+```
+
+```
+S;M;plasticCup()[\]nC;V;mobile phone\nC;C;coffee machine\nS;C;LargeSoftwareBook\nC;M;white sheet of paper\nS;V;pictureFrame\n
+```
+
+```
+S;M;plasticCup()\[n]C;V;mobile phone\nC;C;coffee machine\nS;C;LargeSoftwareBook\nC;M;white sheet of paper\nS;V;pictureFrame\n
 ```
 
 ![plasticCup](./hacker_img/camel_case_4/camel_case_4_s_m_plasticcup.png)
