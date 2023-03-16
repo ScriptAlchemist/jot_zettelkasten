@@ -2,7 +2,10 @@
 
 > Justin Bender
 
-![Camel Case 4 Explaination Diagram](./hacker_img/camel_case_4.png)
+![Camel Case
+Question](./hacker_img/camel_case_4/camel_case_4_question.png)
+
+![Camel Case 4 Explaination Diagram](./hacker_img/camel_case_4/camel_case_4.png)
 
 I won't retype everything right now. Maybe I'll come back to it. I'm
 focused on excalidraw. I will attach the images to the page.
@@ -28,7 +31,7 @@ functions around each `key`.
 * `V`: Variable
 
 
-![Pipe using keys to separate functions](./hacker_img/camel_case_4_pipeline_1.png)
+![Pipe using keys to separate functions](./hacker_img/camel_case_4/camel_case_4_pipeline_1.png)
 
 If you notice there around around 6 different variations possible. All
 of them included inside of this pipeline example.
@@ -82,26 +85,26 @@ S;C;OrangeHighlighter
 
 ### `S;M;plasticCup()`
 
-![plasticCup](./hacker_img/camel_case_4_s_m_plasticcup.png)
+![plasticCup](./hacker_img/camel_case_4/camel_case_4_s_m_plasticcup.png)
 
 ### `C;V;mobile phone`
 
-![mobile phone](./hacker_img/camel_case_4_c_v_mobile_phone.png)
+![mobile phone](./hacker_img/camel_case_4/camel_case_4_c_v_mobile_phone.png)
 
 ### `C;C;coffee machine`
 
-![coffee machine](./hacker_img/camel_case_4_c_c_coffee_machine.png)
+![coffee machine](./hacker_img/camel_case_4/camel_case_4_c_c_coffee_machine.png)
 
 ### `S;C;LargeSoftwareBook`
 
-![LargeSoftwareBook](./hacker_img/camel_case_4_s_c_LargeSoftwareBook.png)
+![LargeSoftwareBook](./hacker_img/camel_case_4/camel_case_4_s_c_LargeSoftwareBook.png)
 
 ### `C;M;white sheet of paper`
 
-![white sheet of paper](./hacker_img/camel_case_4_c_m_white_sheet_of_paper.png)
+![white sheet of paper](./hacker_img/camel_case_4/camel_case_4_c_m_white_sheet_of_paper.png)
 
 ### `S;V;pictureFrame`
 
-![pictureFrame](./hacker_img/camel_case_4_s_v_pictureFrame.png)
+![pictureFrame](./hacker_img/camel_case_4/camel_case_4_s_v_pictureFrame.png)
 
 
