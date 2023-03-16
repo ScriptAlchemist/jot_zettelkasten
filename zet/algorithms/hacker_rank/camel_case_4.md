@@ -109,21 +109,21 @@ S;M;plasticCup()\nC;V;mobile phone\nC;C;coffee machine\nS;C;LargeSoftwareBook\nC
 Which makes a bit more sense when we look at it. Then we will be moving
 over 1 window block at a time
 
-### `S;M;plasticCup()`
+### S;M;plasticCup()
 
-1) [S]: Split words
+1) `[S]`: Split words
 
 ```
 [S];M;plasticCup()\nC;V;mobile phone\nC;C;coffee machine\nS;C;LargeSoftwareBook\nC;M;white sheet of paper\nS;V;pictureFrame\n
 ```
 
-2) [;]: filler
+2) `[;]`: filler
 
 ```
 S[;]M;plasticCup()\nC;V;mobile phone\nC;C;coffee machine\nS;C;LargeSoftwareBook\nC;M;white sheet of paper\nS;V;pictureFrame\n
 ```
 
-3) [M]: The word is a method
+3) `[M]`: The word is a method
 
 ```
 S[;]M;plasticCup()\nC;V;mobile phone\nC;C;coffee machine\nS;C;LargeSoftwareBook\nC;M;white sheet of paper\nS;V;pictureFrame\n
@@ -131,23 +131,23 @@ S[;]M;plasticCup()\nC;V;mobile phone\nC;C;coffee machine\nS;C;LargeSoftwareBook\
 
 ![plasticCup](./hacker_img/camel_case_4/camel_case_4_s_m_plasticcup.png)
 
-### `C;V;mobile phone`
+### C;V;mobile phone
 
 ![mobile phone](./hacker_img/camel_case_4/camel_case_4_c_v_mobile_phone.png)
 
-### `C;C;coffee machine`
+### C;C;coffee machine
 
 ![coffee machine](./hacker_img/camel_case_4/camel_case_4_c_c_coffee_machine.png)
 
-### `S;C;LargeSoftwareBook`
+### S;C;LargeSoftwareBook
 
 ![LargeSoftwareBook](./hacker_img/camel_case_4/camel_case_4_s_c_LargeSoftwareBook.png)
 
-### `C;M;white sheet of paper`
+### C;M;white sheet of paper
 
 ![white sheet of paper](./hacker_img/camel_case_4/camel_case_4_c_m_white_sheet_of_paper.png)
 
-### `S;V;pictureFrame`
+### S;V;pictureFrame
 
 ![pictureFrame](./hacker_img/camel_case_4/camel_case_4_s_v_pictureFrame.png)
 
