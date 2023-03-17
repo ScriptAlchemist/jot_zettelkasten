@@ -639,5 +639,7 @@ We now have a low-latency, competent, and accurate process; most
 importantly, this process has stayed strong as the rate of change, the
 number of teams, and the number of services seem to double each year.
 
+As mentioned earlier, our evolution of turnup automation followed a path:
+
 
 
