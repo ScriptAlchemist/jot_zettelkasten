@@ -641,5 +641,20 @@ number of teams, and the number of services seem to double each year.
 
 As mentioned earlier, our evolution of turnup automation followed a path:
 
+1. Operator-triggered manual action (no automation)
+2. Operator-written, system-specific automation
+3. Externally maintained generic automation
+4. Internally maintained, system-specific automation
+5. Autonomous systems that need no human intervention
+
+While this evolution has, broadly speaking, been a success, the `Borg`
+case study illustrates another way we have come to thinking of the problem
+of automation.
+
+## Borg: Birth of the Warehouse-Scale Computer
+
+Another way to understand the development of our attitude toward
+automation
+
 
 
