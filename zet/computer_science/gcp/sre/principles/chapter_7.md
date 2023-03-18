@@ -654,7 +654,50 @@ of automation.
 ## Borg: Birth of the Warehouse-Scale Computer
 
 Another way to understand the development of our attitude toward
-automation
+automation, and when and where that automation is best deployed, is to
+consider the history of the development of our cluster management
+systems.[^31] Like MySQL on Borg, which demonstrated the success of
+converting manual operations to automatic ones, and the cluster turnup
+process, which demonstrated the downside of not thinking carefully
+enough about where and how automation was implemented, developing
+cluster management also ended up demonstrating another lesson about how
+automation should be done. Like our previous two examples, something
+quite sophisticated was created as the eventual result of continuous
+evolution from simpler beginnings.
+
+Google's clusters were initially deployed much like everyone else's
+small networks of the time: racks of machines with specific purposes and
+heterogeneous configuration. Engineers would log in to some well-known
+"master" machine to perform administrative tasks; "golden" binaries and
+configuration lived on these masters. As we had only one colo provider,
+most naming logic implicitly assumed that location. As production grew,
+and we began to use multiple cluster, different domains (cluster names)
+entered the picture. It became necessary to have a file describing what
+each machine did, which grouped machines under some loose naming
+strategy. This descriptor file, in combination with the equivalent of a
+parallel SSH, allowed us to reboot (for example) all the search machines
+in one go. Around this time, it was common to get tickets like "search
+is done with machine `x1`, crawl can have the machine now."
+
+Automation development began. Initially automation consisted of simple
+Python scripts for operations such as following:
+
+* `Service management`: keeping services running (e.g., restarts after segfaults)
+* Tracking what services were supposed to run on which machines
+* `Log message parsing`: `SSHing` into each machine and looking for regexps
+
+Automation eventually mutated into a proper database that tracked
+machine state, and also incorporated more sophisticated monitoring
+tools. With the union set of the automation available, we could now
+automatically manage much of the life cycle of machines: noticing when
+machines were broken, removing the services, sending them to repair, and
+restoring the configuration when they came back from repair.
+
+But to take a step back, this automation was useful yet profoundly
+limited, due to the fact that abstractions of the system were
+relentlessly tied to physical machines. We needed a new approach, hence
+`Borg` [[Ver15]](https://sre.google/sre-book/bibliography#Ver15) was
+born: a system that moved away from the
 
 
 
