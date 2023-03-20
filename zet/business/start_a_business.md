@@ -39,13 +39,15 @@ to focus on:
 ## Table Of Contents
 
 * [Market Research](#market-research)
-  - [Electronics](#electronics)
-  - [Health & Beauty](#health-and-beauty)
-  - [Fitness & Sports](#fitness-and-sports)
-  - [Home & Kitchen](#home-and-kitchen)
-  - [Fashion](#fashion)
-  - [Pet Supplies](#pet-supplies)
-  - [Outdoor and Travel](#outdoor-and-travel)
+  - Store Theme
+    - [Electronics](#electronics)
+    - [Health & Beauty](#health-and-beauty)
+    - [Fitness & Sports](#fitness-and-sports)
+    - [Home & Kitchen](#home-and-kitchen)
+    - [Fashion](#fashion)
+    - [Pet Supplies](#pet-supplies)
+    - [Outdoor and Travel](#outdoor-and-travel)
+  - [Dropshipping Challenges](#dropshipping-challenges)
 * [Business Plan](#business-plan)
 * [Mission and Vision Statements](#mission-and-vision-statements)
 * [Company Name, Logo, and Branding](#name-logo-branding)
@@ -159,6 +161,88 @@ a specific customer segment or outdoor activity for better success.
 Choose a niche that interests you or one you believe has high demand and
 profit potential. After you've decided on your product category, I can
 help you brainstorm a suitable URL and social media handles.
+
+---
+
+### Dropshipping Challenges
+
+#### Can I dropship name brand products?
+
+Dropshipping top-of-the-line or branded products can be challenging
+because most well-known brands like **Nike** have strict distribution and
+retail policies. They usually work with authorized dealers and
+distributors, which means you may not be able to dropship their products
+directly.
+
+However, there are some ways you can offer branded products through
+dropshipping:
+
+1. Partner with authorized wholesalers or distributors: Reach out to
+authorized wholesalers or distributors who have permission to sell
+branded products. You may be able to partner with them and dropship
+their products. Keep in mind that your profit margins may be lower when
+dealing with branded products due to higher wholesale prices.
+
+2. Consider lesser-known, high-quality brands: You can find smaller or
+emerging brands that offer high-quality products and are open to working
+with dropshippers. These brands might not have the same recognition as
+big names like Nike, but they can still offer top-of-the-line products
+that cater to a specific target audience.
+
+3. Use a dropshipping platform with branded products: Some dropshipping
+platforms, like `Spocket`, offer branded and high-quality products from
+suppliers in the US and Europe. While you may not find well-known brands
+like Nike, you can still find quality products that you can dropship.
+
+4. Focus on authorized brand collaborations: Some brands collaborate with
+authorized dealers or designers to create unique, limited-edition
+products. You can partner with these dealers or designers and dropship
+their branded collaborations.
+
+5. Keep in mind that dropshipping branded products may come with some
+challenges, such as higher competition, lower profit margins, and
+stricter policies from suppliers. Make sure to research your chosen
+niche thoroughly and ensure that you're complying with any relevant
+policies or agreements.
+
+#### What online options are there to dropship branded products?
+
+These platforms aim to provide a more curated selection
+of products, focusing on quality over quantity.
+
+* `Spocket` is just one example of a dropshipping platform that offers
+branded and high-quality products from suppliers in the US, Europe, and
+other regions.
+
+* `Modalyst` is a dropshipping platform that connects online
+stores with a variety of suppliers, including independent designers and
+brand-name products. They offer a wide range of products, including
+fashion, accessories, beauty, and home goods. Modalyst emphasizes
+high-quality products and fast shipping times, which can help set your
+store apart from the competition.
+
+* `Oberlo` is a popular dropshipping platform that
+integrates with Shopify. While they primarily offer a wide range of
+generic products, they also have some branded and higher-quality items
+from suppliers around the world. You'll need to search through their
+catalog to find the right products for your store.
+
+* `SaleHoo` is a wholesale and dropshipping directory that connects
+online retailers with suppliers. They offer over 8,000 vetted suppliers,
+including some that carry branded and high-quality products. SaleHoo
+focuses on providing reliable suppliers with good customer support,
+making it easier for you to run your business.
+
+* `Worldwide Brands` is a directory of wholesale and
+dropshipping suppliers. They offer access to thousands of suppliers,
+including some carrying branded and high-quality products. They
+emphasize supplier quality, ensuring that each supplier in their
+directory is reputable and reliable.
+
+> It's important to do your research and vet each supplier you work with. Always request product samples to verify quality and make sure you're comfortable with the supplier's shipping times and customer support. By partnering with reliable suppliers offering branded and high-quality products, you can create a more competitive and attractive online store.
+
+#### Where can I find artists?
+
 
 ## Business Plan
 
