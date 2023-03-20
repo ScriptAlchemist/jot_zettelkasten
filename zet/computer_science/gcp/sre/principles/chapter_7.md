@@ -697,7 +697,83 @@ But to take a step back, this automation was useful yet profoundly
 limited, due to the fact that abstractions of the system were
 relentlessly tied to physical machines. We needed a new approach, hence
 `Borg` [[Ver15]](https://sre.google/sre-book/bibliography#Ver15) was
-born: a system that moved away from the
+born: a system that moved away from the relatively static host/port/job
+assignments of the previous world, toward treating a collection of
+machines as a manged sea of resources. Central to its success-and its
+conception-was the notion of turning cluster management into an entity
+for which API calls could be issued, to some central coordinator. This
+liberated extra dimensions of efficiency, flexibility, and reliability:
+unlike the previous model of machine "ownership," `Borg` could allow
+machines to schedule, for example, batch **and** user-facing tasks on
+the same machine.
+
+This functionality ultimately resulted in continuous and automatic
+operating system upgrades with a very small amount of constant[^32]
+effort-effort that does **not** scale with the total size of production
+deployments. Slight deviations in machine state are now automatically
+fixed; brokenness and lifecycle management are essentially no-ops for
+SRE at this point. Thousands of machines are born, die, and go into
+repairs daily with no SRE effort. To echo the words of `Ben Treynor
+Sloss`: by taking the approach that this was a software problem, the
+initial automation bought us enough time to turn cluster management into
+something autonomous, as opposed to automated. We achieved this goal by
+bringing ideas related to data distribution, APIs, hub-and-spoke
+architectures, and classic distributed system software development to
+bear upon the domain of infrastructure management.
+
+An interesting analogy is possible here: we can make a direct mapping
+between the single machine case and the development of cluster
+management abstractions. In this view, rescheduling on another machine
+looks a lot like a process moving from one CPU to another: of course,
+those compute resources happen to be at the other end of a network link,
+but to what extent does that actually matter? Thinking in these terms,
+rescheduling looks like an intrinsic feature of the system rather than
+something one would "automate"-humans couldn't react fast enough anyway.
+Similarly in the case of cluster turnup: in this metaphor, cluster
+turnup is simply additional schedulable capacity, a bit like adding disk
+or RAM to a single computer. However, a single-node computer is not, in
+general, expected to continue operating when a large number of
+components fail. The global computer is-it **must** be self-repairing to
+operate once it grows past a certain size, due to the essentially
+statistically guaranteed large number of failures taking place every
+second. This implies that as we move systems up the hierarchy from
+manually triggered, to automatically triggered, to autonomous, some
+capacity for self-introspection is necessary to survive.
+
+## Reliability Is the fundamental Feature
+
+Of course, for effective troubleshooting, the details of internal
+operations that the introspection relies upon should also be exposed to
+the humans managing the overall system. Analogous discussions about the
+impact of automation in the non-computer domain-for example, in airplane
+flight[^33] or industrial applications-often point out the downside of
+highly effective automation:[^34] human operators are progressively more
+relieved of useful direct contact with the system as the automation
+covers more and more daily activities over time. Inevitably, then, a
+situation arises in which the automation fails, and the humans are now
+unable to successfully operate the system. The fluidity of their
+reactions has been lost due to lack of practice, and their mental models
+of what the system **should** be doing no longer reflect the reality of
+what it **is** doing.[^35] This situation arises more when the system is
+non-autonomous-i.e., where automation replaces manual actions, and the
+manual actions are presumed to be always performable and available just
+as they were before. Sadly, over time, this ultimately becomes false:
+those manual actions are not always performable because the
+functionality to permit them no longer exists.
+
+We, too, have experienced situations where automation has been actively
+harmful on a number of occasions-see [Automation: Enabling Failure at
+Scale](https://sre.google/sre-book/automation-at-google/#xref_automation_diskerase-sidebar)-but
+in Google's experience, there are more systems for which automation or
+autonomous behavior are no longer optional extras. As you scale, this is
+of course the case, but there are still strong arguments for more
+autonomous behaviour of systems irrespective of size. Reliability is the
+fundamental feature, and autonomous, resilient behavior is one useful
+way to get that.
+
+
+
+
 
 
 
