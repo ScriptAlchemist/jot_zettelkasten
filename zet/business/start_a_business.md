@@ -38,18 +38,37 @@ to focus on:
 
 ## Table Of Contents
 
-* [1. Market Research](#market-research)
-* [2. Business Plan](#business-plan)
-* [3. Mission and Vision Statements](#mission-and-vision-statements)
-* [4. Company Name, Logo, and Branding](#name-logo-branding)
-* [5. Legal Structure](#legal-structure)
-* [6. Permits and Licenses](#permits-and-licenses)
-* [7. Financial Management](#financial-management)
-* [8. Business Location](#business-location)
-* [9. Product/Service Development](#product-development)
-* [10. Marketing Strategy](#marketing-strategy)
-* [11. Sales Strategy](#sales-strategy)
-* [12. Team Building](#team-building)
-* [13. Networking](#networking)
-* [14. Continuous Improvements](#continuous-improvements)
+* [Checklist (Completed)](#checklist-completed)
+* [Market Research](#market-research)
+* [Business Plan](#business-plan)
+* [Mission and Vision Statements](#mission-and-vision-statements)
+* [Company Name, Logo, and Branding](#name-logo-branding)
+* [Legal Structure](#legal-structure)
+* [Permits and Licenses](#permits-and-licenses)
+* [Financial Management](#financial-management)
+* [Business Location](#business-location)
+* [Product/Service Development](#product-development)
+* [Marketing Strategy](#marketing-strategy)
+* [Sales Strategy](#sales-strategy)
+* [Team Building](#team-building)
+* [Networking](#networking)
+* [Continuous Improvements](#continuous-improvements)
 
+### Checklist (Completed):
+
+1. [ ]: Market Research
+2. [ ]: Business Plan
+3. [ ]: Mission and Vision Statements
+4. [ ]: Company Name, Logo, and Branding
+5. [ ]: Legal Structure
+6. [ ]: Permits & Licenses
+7. [ ]: Financial Management
+8. [ ]: Business Location
+9. [ ]: Product/Service Development
+10. [ ]: Marketing Strategy
+11. [ ]: Sales Strategy
+12. [ ]: Team Building
+13. [ ]: Networking
+14. [ ]: Continuous Improvements
+
+## Market Research
