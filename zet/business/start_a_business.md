@@ -6,7 +6,7 @@ to focus on:
 
 ---
 
-[ ]. **Market Research**: Conduct thorough research on your target market, industry trends, and competitors. Understand your audience's needs and preferences.
+- [ ] **Market Research**: Conduct thorough research on your target market, industry trends, and competitors. Understand your audience's needs and preferences.
 
 2. **Business Plan**: Develop a comprehensive business plan, including an executive summary, company overview, market analysis, organization and management structure, product/service line, marketing and sales strategies, financial projections, and funding requirements.
 
