@@ -239,9 +239,45 @@ including some carrying branded and high-quality products. They
 emphasize supplier quality, ensuring that each supplier in their
 directory is reputable and reliable.
 
+* `CJ Dropshipping`: CJ Dropshipping offers a wide range of products,
+including watches and jewelry. They work with suppliers from various
+countries and provide an easy-to-use platform for managing your
+dropshipping business. You can find both branded and non-branded watches
+and jewelry, as well as request custom products.
+
+* `Richard Cannon Jewelry`: Richard Cannon Jewelry is a wholesaler of fine
+jewelry, including gold, silver, and diamond pieces. They offer a
+dropshipping program that allows you to sell their products without
+holding any inventory. They also provide product images and descriptions
+to make it easy for you to list their items on your website.
+
 > It's important to do your research and vet each supplier you work with. Always request product samples to verify quality and make sure you're comfortable with the supplier's shipping times and customer support. By partnering with reliable suppliers offering branded and high-quality products, you can create a more competitive and attractive online store.
 
-#### Where can I find artists?
+#### How can I make partnership with Name Brands?
+
+> To sell just-released items, particularly for well-known brands, it is often necessary to establish partnerships directly with the companies or their authorized distributors. This ensures that you have access to the latest products as soon as they become available. Here are some steps to help you get started:
+
+* **Research the brands or companies**: Identify the brands or companies whose just-released items you want to sell. Study their products, target audience, and existing distribution channels. This will give you a better understanding of their business and help you tailor your approach.
+
+* **Establish your business**: Before reaching out to companies or distributors, it's important to have a registered business, a well-designed website, and a clear business plan. This demonstrates your professionalism and commitment to the partnership.
+
+* **Contact the companies or distributors**: Reach out to the brands or their authorized distributors to express your interest in selling their just-released items. You can usually find their contact information on their websites or through professional networking platforms like LinkedIn.
+
+* **Prepare a proposal**: When contacting companies, present a clear and concise proposal outlining how you plan to market and sell their products. Explain your target audience, marketing strategies, and how your store aligns with their brand image. Demonstrating your understanding of their products and audience will increase your chances of establishing a partnership.
+
+* **Negotiate terms and agreements**: If a company or distributor is interested in partnering with you, you'll need to negotiate the terms and agreements of the partnership. This may include pricing, order volumes, shipping arrangements, returns, and other relevant details.
+
+* **Stay updated with product releases**: Once you have established a partnership, stay informed about upcoming product releases and promotions. This will enable you to plan and prepare your marketing campaigns accordingly.
+
+* **Build strong relationships**: Maintain open and transparent communication with your partners to ensure a successful long-term relationship. Address any issues promptly and share updates on your marketing efforts and sales performance.
+
+> Remember that building partnerships with well-known brands or their authorized distributors may be challenging, as they often have strict requirements and established distribution networks. However, by demonstrating your:
+>
+>  * professionalism
+>  * understanding of their products
+>  * commitment to promoting their brand
+>
+>  You may be able to secure partnerships that allow you to sell just-released items in your online store.
 
 
 ## Business Plan
