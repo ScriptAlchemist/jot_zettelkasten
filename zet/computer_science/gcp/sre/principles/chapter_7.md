@@ -771,9 +771,84 @@ autonomous behaviour of systems irrespective of size. Reliability is the
 fundamental feature, and autonomous, resilient behavior is one useful
 way to get that.
 
+## Recommendations
+
+You might read the examples in this chapter and decide that you need to
+be Google-scale before you have anything to do with automation
+whatsoever. This is untrue, for two reasons: automation provides more
+than just time saving , so it's worth implementing in more cases than a
+simple time-expended versus time-saved calculation might suggest. But
+the approach with the highest leverage actually occurs in the design
+phase: shipping and iterating rapidly might allow you to implement
+functionality faster, yet rarely makes for a resilient system.
+Autonomous operation is difficult to convincingly retrofit to
+sufficiently large systems, but standard good practices in software
+engineering will help considerably: having decoupled subsystems,
+introducing APIs, minimizing side effects, and so on.
 
 
+### Automation: Enabling Failure at Scale
 
+Google runs over a dozen of its own large datacenters, but we also
+depend on machines in many third-party co-location facilities (or
+`colos`). Our machines in these `colos` are used to terminate most
+incoming connections, or as a cache for our own Content Delivery
+Network, in order to lower end-user latency. At any point in time, a
+number of these racks are being installed or decommissioned; both of
+these processes are largely automated. One step during decommission
+involves overwriting the full content of the disk of all the machines
+in the rack, after which point an independent system verifies the
+successful erase. We call this process "Diskerase."
 
+Once upon a time, the automation in charge of decommissioning a
+particular rack failed, but only after the Diskerase step had completed
+successfully. Later, the decommission process was restarted from the
+beginning, to debug the failure. On that iteration, when trying to send
+the set of machines in the rack to Diskerase, the automation determined
+that the set of machines that still needed to be Diskerased was
+(correctly) empty. Unfortunately, the empty set was used as a special
+value, interpreted to mean "everything." This means the automation sent
+almost all the machines we have in all colos to Diskerase
 
+Within minutes, the highly efficient Diskerase wiped the disks on all the
+machines. in our CDN, and the machines were no longer able to terminate
+connections from users (or do anything else useful). We were still able
+to serve all the users from our own datacenters, and after a few
+minutes the only effect visible externally was a slight increase in
+latency. As far as we could tell, very few users noticed the problem at
+all, thanks to good capacity planning (at least we got that right!).
+Meanwhile, we spent the better part of two days reinstalling the
+machines in the affected colo racks; then we spent the following weeks
+auditing and adding more sanity checks-including rate limiting-into our
+automation, and making our decommission workflow idempotent.
 
+[^26]: For readers who already feel they precisely understand the value of
+automation, skip ahead to `The Value for Google SRE`. However, note that
+our description contains some nuances that might be useful to keep in
+mind while reading the rest of the chapter.
+
+[^27]: The expertise acquired in building such automation is also
+valuable in itself; engineers both deeply understand the existing
+processes they have automated and can later automated novel processes
+more quickly.
+
+[^28]: See the following XKCD cartoon: [https://xkcd.com/1205](https://xkcd.com/1205).
+
+[^29]: See, for example,
+[https://blog.engineyard.com/2014/pets-vs-cattle](https://blog.engineyard.com/2014/pets-vs-cattle).
+
+[^30]: Of course, not every system that needs to be managed actually
+provide callable APIs for management-forcing some tooling to use, e.g.,
+CLI invocations or automated website clicks.
+
+[^31]: We have compressed and simplified this history to aid understanding.
+
+[^32]: As in a small, unchanging number.
+
+[^33]: See, e.g., [https://en.wikipedia.org/wiki/Air_France_Flight_447](https://en.wikipedia.org/wiki/Air_France_Flight_447)
+
+[^34]: See, e.g.,
+[[Bai83]](https://sre.google/sre-book/bibliography#Bai83)
+[[Sar97]](https://sre.google/sre-book/bibliography#Sar97).
+
+[^35]: This is yet another good reason for regular practice drills; see [Disaster Role Playing](https://sre.google/sre-book/accelerating-sre-on-call#xref_training_disaster-rpg)
