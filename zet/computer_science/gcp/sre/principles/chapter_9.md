@@ -127,4 +127,75 @@ make the solutions we explicitly set out to create substantially better.
 In software, less is more! A small, simple API is usually also a
 hallmark of a well-understood problem.
 
+## Modularity
 
+Expanding outward from APIs and single binaries, many of the rules of
+thumb that apply to object-oriented programming also apply to the design
+of distributed systems. The ability to make changes to parts of the
+system in isolation is essential to creating a supportable system.
+Specifically, loose coupling between binaries, or between binaries and
+configuration, is a simplicity pattern that simultaneously promotes
+developer agility and system stability. If a bug is discovered in one
+program that is a component of a larger system, that bug can be fixed
+and pushed to production independent of the rest of the system.
+
+While the modularity that APIs offer may seem straightforward, it is not
+so apparent that the notion of modularity also extends to how changes to
+APIs are introduced. Just a single change to an API can force developers
+to rebuild their entire system and run the risk of introducing new bugs.
+Versioning APIs allows developers to continue to use the version that
+their system depends upon while they upgrade to a newer version in a
+safe and considered way. The release cadence can vary throughout a
+system, instead of requiring a full production push of the entire system
+every time a feature is adding or improved.
+
+As a system grows more complex, the separation of responsibility between
+APIs and between binaries becomes increasingly important. This is a
+direct analogy to object-oriented class design: just as it is understood
+that it is poor practice to write a "grab bag" class that contains
+unrelated functions, it is also poor practice to create and put into
+production a "util" or "misc" binary. A well-designed distributed system
+consists of collaborators, each of which has a clear and well-scoped
+purpose.
+
+The concept of modularity also applies to data formats. One of the
+central strengths and design goals of Google's protocol buffers[^40] was
+to create a wire format that was backward and forward compatible.
+
+## Release Simplicity
+
+Simple releases are generally better than complicated releases. It is
+much easier to measure and understand the impact of a single change
+rather than a batch of changes released simultaneously. If we release
+100 unrelated changes to a system at the same time and performance gets
+worse, understanding which changes impacted performance, and how they
+did so, will take considerable effort or additional instrumentation. If
+the release is performed in smaller batches, we can move faster with
+more confidence because each code change can be understood in isolation
+in the larger system. This approach to release can be compared to
+gradient descent in machine learning, in which we find an optimum
+solution by taking small steps at a time, and considering if each change
+results in an improvement or degradation.
+
+## A Simple Conclusion
+
+The chapter has repeated on theme over and over: software simplicity is
+a prerequisite to reliability. We are not being lazy when we consider
+how we might simplify each step of a given task. Instead, we are
+clarifying what it is we actually want to accomplish and how we might
+most easily do so. Every time we say "no" to a feature, we are not
+restricting innovation; we are keeping the environment uncluttered of
+distractions so that focus remains squarely on innovation, and real
+engineering can proceed.
+
+[^38]: This is often true of complex systems in general; see
+[[Per99]](https://sre.google/sre-book/bibliography#Per99) and
+[[Coo00]](https://sre.google/sre-book/bibliography#Coo00).
+
+[^39]: Coined by my former manager, Johan Anderson, around the time I
+became an SRE.
+
+[^40]: Protocol buffers, also referred to as "protobufs," are a
+language-neutral, platform-neutral extensible mechanism for serializing
+structured data. For more details, see
+[https://developers.google.com/protocol-buffers/docs/overview#a-bit-of-history](https://developers.google.com/protocol-buffers/docs/overview#a-bit-of-history).
