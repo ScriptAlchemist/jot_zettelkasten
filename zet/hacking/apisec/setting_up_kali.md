@@ -71,4 +71,14 @@ The certificate should be setup now.
 18. We will run `sudo tar -xvzf postman-linux-x64.tar.gz -C /opt`. This
     will open up the postman into the `/opt` folder for use.
 
-19. 
+19. Now we want to link that to the command postman: `sudo ln -s
+    /opt/Postman/Postman /usr/bin/postman`
+
+20. Then you should be able to run `postman`. This will open the app.
+    Sign in to be able to save your progress.
+
+21. Once you're logged in. Go to the workspace and create a new
+    workspace for this course.
+
+22. Now we are going to start bringing other tools into the mix. We will
+    start in the `/opt` folder.
