@@ -184,6 +184,39 @@ rules by using the collection failure itself as a signal.
 
 ## Storage in the Time-Series Arena
 
+A service is typically made up of many binaries running as many tasks,
+on many machines, in many cluster. Borgmon needs to keep all that data
+organized, while allowing flexible querying and slicking of that data.
+
+Borgmon stores all the data in an in-memory database, regularly
+checkpointed to disk. The data points have the form `(timestamp,
+value)`, and are stored in chronological lists called **time-series**,
+and each time-series is named by a unique set of **labels**, of the form
+`name=value`.
+
+As presented in **Figure 10-1**, a time-series is conceptually a
+one-dimensional matrix of numbers, progressing through time. As you add
+permutations of labels to this time-series, the matrix becomes
+multidimensional.
+
+![A time-series for erros labeled by the orignal host each was collected
+from](../../gcp-img/figure_10_1.jpg) Figure 10-1. A time-series for
+errors labeled by the original host each was collected from.
+
+In practice, the structure is a fixed-sized block of memory, known as
+the **time-series arena**, with a garbage collector that expires that
+oldest entries once the arena is full. The time interval between the
+most recent and oldest entries in the arena is the **horizon**, which
+indicates how much queryable data is kept in RAM. Typically, datacenter
+and global Borgmon are sized to hold about 12 hours of data[^50] for
+rendering consoles, and much less time if they are the lowest-level
+collector shards. The memory requirement for a single data point is
+about 24 bytes, so we can fit 1 million unique time-series for 12 hourse
+at 1-minute intervals in under 17 GB of RAM.
+
+
+
+
 
 
 
