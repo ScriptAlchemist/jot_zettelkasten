@@ -214,22 +214,193 @@ collector shards. The memory requirement for a single data point is
 about 24 bytes, so we can fit 1 million unique time-series for 12 hourse
 at 1-minute intervals in under 17 GB of RAM.
 
+Periodically, the in-memory state is archived to an external system
+known as the Time-Series Database (TSDB). Borgmon can query TSDB for
+older data and, while slower, TSDB is cheaper and larger than a
+Borgmon's RAM.
 
+### Labels and Vectors
 
+As shown in the example time-series in **Figure 10-2**, time-series are
+stored as a sequences of numbers and timestamps, which are referred to
+as **vectors**. Like vectorss in linear algebra, these vectors are
+slices and cross-sections of the multidimensional matrix of data points
+in the arena. Conceptually the timestamps can be ignored, because the
+values are inserted in the vector at regular intervals in time-for
+example, 1 or 10 seconds or 1 minute apart.
 
+![An example time-series.](../../gcp-img/figure_10_2.jpg) Figure 10-2.
+An example time-series
 
+Then name of a time-series is a `labelset`, because it's implemented as
+a set of labels expressed as `key=value` pairs. One of these labels is
+the variable name itself, the key that appears on the verz page.
 
+A few label names are declared as important. For the time-series in the
+time-series database to be identifiable, it must at minimum have the
+following labels:
 
+* `var`: The name of the variable
+* `job`: The name given to the type of server being monitored
+* `service`: A loosely defined collection of jobs that provide a service
+  to users, either internal or external
+* `zone`: A Google convention that refers to the location (typically
+  that datacenter) of the Borgmon that performed the collection of this
+  variable
 
+Together, these variables appear something like the following, called
+the **variable expression**:
 
+```
+{var=http_requests,job=webserver,instance=host0:80,service=web,zone=us-west}
+```
 
+A query for a time-series does not require specification of all these
+labels, and a search for a `labelset` returns all matching time-series
+in a vector. So we could return a vector of results by removing the
+**instance** label in the preceding query, if there were more than one
+instance in the cluster. For example:
 
+```
+{var=http_requests,job=webserver,service=web,zone=us-west}
+```
 
+Might have a result of five rows in a vector, with the most recent value
+in the time-series like so:
 
+```
+[var=http_requests,job=webserver,instance=host0:80,service=web,zone=us-west} 10
+[var=http_requests,job=webserver,instance=host1:80,service=web,zone=us-west} 9
+[var=http_requests,job=webserver,instance=host2:80,service=web,zone=us-west} 11
+[var=http_requests,job=webserver,instance=host3:80,service=web,zone=us-west} 0
+[var=http_requests,job=webserver,instance=host4:80,service=web,zone=us-west} 10
+```
 
+Labels can be added to a time-series from:
 
+* The target's name, e.g., the job and instance
+* The target itself, e.g., via map-valued variables
+* The Borgmon configuration e.g., annotations about location or
+  relabeling
+* The Borgmon rules being evaluated
 
+We can also query time-series in time, by specifying a duration to the
+variable expression:
 
+```
+{var=http_requests,job=webserver,service=web,zone=us-west}[10m]
+```
+
+This returns the last 10 minutes of history of the time-series that
+matched the expression. If we were collecting data points once per
+minute, we would expect to return 10 data points in a 10-minute window,
+like so:[^51]
+
+```
+{var=http_requests,job=webserver,instance=host0:80, ...} 0 1 2 3 4 5 6 7
+8 9 10
+{var=http_requests,job=webserver,instance=host1:80, ...} 0 1 2 3 4 4 5 6
+7 8 9
+{var=http_requests,job=webserver,instance=host2:80, ...} 0 1 2 3 5 6 7 8
+9 9 11
+{var=http_requests,job=webserver,instance=host3:80, ...} 0 0 0 0 0 0 0 0
+0 0 0
+{var=http_requests,job=webserver,instance=host4:80, ...} 0 1 2 3 4 5 6 7
+8 9 10
+```
+
+## Rule Evaluation
+
+Borgmon is really just a programmable calculator, with some syntactic
+sugar that enables it to generate alerts. The data collection and
+storage components already described are just necessary evils to make
+that programmable calculator ultimately fit for purpose here as a
+monitoring system. :)
+
+### Note
+
+Centralizing the rule evaluation in a monitoring system, rather than
+delegating it to forked subprocesses, means that computations can run in
+parallel against many similar targets. This practice keeps the
+configuration relatively small in size (for example, by removing
+duplication of code) yet more powerful through its expressiveness.
+
+The Borgmon program code, also known as **Borgmon rules**, consists of
+simple algebraic expressions that compute time-series from other
+time-series. These rules can be quite powerful because they can query
+the history of a single time-series (i.e., the time axis), query
+different subsets of labels from many time-series at once (i.e., the
+space axis), and apply many mathematical operations.
+
+Rules run in parallel thread-pool where possible, but are dependent on
+ordering when using previously defined rules as input. The size of the
+vectors returned by their query expressions also determines the overall
+runtime of a rule. Thus, it is typically the case that one can add CPU
+resources to a Borgmon task in response to it running slow. To assists
+more detailed analysis, internal metrics on the runtime of rules are
+exported for performance debugging and for monitoring the monitoring.
+
+Aggregation is the cornerstone of rule evaluation in a distributed
+environment. Aggregation entails taking the sum of a set of time-series
+from the tasks on a job in order to treat the job as a whole. From those
+sums, overall rates can be computed. For example, the total queries
+-per-second rate of a job in a datacenter is the sum of all the rates of
+change[^52] of all the query counters.[^53]
+
+### Tip
+
+A counter is any monotonically non-decreasing variable-which is to say,
+counters only increase in value. Gauges, on the other hand, may take any
+value they like. Counters measure increasing values, such as the total
+number of kilometers driven, while gauges show current state, such as
+the amount of fuel remaining or current speed. When collection
+Borgmon-style data, it's better to use counters, because they don't lose
+meaning when events occur between sampling intervals. Should any
+activity or changes occur between sampling intervals, a gauge collection
+is likely to miss that activity.
+
+For an example web server, we might want to alert when our web server
+cluster starts to serve more errors as a percent of requests than we
+think is normal-or more technically, when the sum of the rates of
+non-HTTP-200 return codes on all tasks in the cluster, divided by the sum
+of the rates of requests to all tasks in that cluster, is greater than
+some value.
+
+This is accomplished by:
+
+1. Aggregating the rates of response codes across all tasks, outputting
+   a vector of rates at that point in time, one for each code.
+2. Computing the total error rate as the sum of that vector, outputting
+   a single value for the cluster at that point in time. This total
+   error rate excludes the 200 code from the sum, because it is not an
+   error.
+3. Computing the cluster-wide ratio of errors to request, dividing the
+   total error rate by the rate of request that arrived, and again
+   outputting a single value for the cluster at that point in time.
+
+Each of these outputs at a point in time gets appended to its named
+variable expression, which creates the new time-series. As a result, we
+will be able to inspect the history of error rates and error rations
+some other time.
+
+The rate of requests rules would be written in Borgmon's rule language
+as the following rules <<<
+
+```
+rules <<<
+# Compute the rate of request for each task from the count of requests
+{var=task:http_responses:reate10m,job=webserver} = rate by
+code({var=http_responses,job=webserver}[10m]);
+
+# Compute a cluster level response rate per 'code' label
+{var=dc:http_responses:rate10m,job=webserver} = sum without
+instance({var=task:http_responses:rate10m,job=webserver});
+
+# Compute a new cluster level rate summing all non 200 codes
+{var=dc:http_erros:rate10m,job=webserver} = sum without code
+({var=dc:http_responses:rate10m,job=webserver,code!/200/});
+
+# Compute the ratio of the rate of erros to the rate of request
 
 
 
