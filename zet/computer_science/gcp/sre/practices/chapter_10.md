@@ -401,7 +401,161 @@ instance({var=task:http_responses:rate10m,job=webserver});
 ({var=dc:http_responses:rate10m,job=webserver,code!/200/});
 
 # Compute the ratio of the rate of erros to the rate of request
+{var=dc:http_errprs:ratio_rate10m,job=webserver} =
+{var=dc:http_errors:rate10m,job=webserver} /
+{var=dc:http_requests:rate10m,job=webserver};
+>>>
+```
 
+Again, this calculation demonstrates the convention of suffixing the new
+time-series variable name with the operation that crated it. This result
+is read as "datacenter HTTP errors 10 minute ratio of rates."
+
+The output of these rules might look like:[^55]
+
+```
+{var=task:http_response:rate10m,job=webserver}
+
+{var=task:http_responses:rate10m,job=webserver,code=200,instance=host0:80, ...} 1
+{var=task:http_responses:rate10m,job=webserver,code=500,instance=host0:80, ...} 0
+{var=task:http_responses:rate10m,job=webserver,code=200,instance=host1:80, ...} 0.5
+{var=task:http_responses:rate10m,job=webserver,code=500,instance=host1:80, ...} 0.4
+{var=task:http_responses:rate10m,job=webserver,code=200,instance=host2:80, ...} 1
+{var=task:http_responses:rate10m,job=webserver,code=500,instance=host2:80, ...} 0.1
+{var=task:http_responses:rate10m,job=webserver,code=200,instance=host3:80, ...} 0
+{var=task:http_responses:rate10m,job=webserver,code=500,instance=host3:80, ...} 0
+{var=task:http_responses:rate10m,job=webserver,code=200,instance=host4:80, ...} 0.9
+{var=task:http_responses:rate10m,job=webserver,code=500,instance=host4:80, ...} 0.1
+
+{var=dc:http_responses:rate10m,job=webserver}
+
+{var=dc:http_responses:rate10m,job=webserver,code=200, ...} 3.4
+{var=dc:http_responses:rate10m,job=webserver,code=500, ...} 0.6
+
+{var=dc:http_responses:rate10m,job=webserver,code=!/200/}
+
+
+{var=dc:http_responses:rate10m,job=webserver,code=500, ...} 0.6
+
+{var=dc:http_errors:rate10m,job=webserver}
+
+{var=dc:http_errors:rate10m,job=webserver, ...} 0.6
+
+{var=dc:http_errors:ratio_rate10m,job=webserver}
+
+{var=dc:http_errors:ratio_rate10m,job=webserver} 0.15
+```
+
+### Note
+
+The preceding output shows the intermediate query in the
+`dc:http_errps:rate10m` rule that filters the non-200 error codes.
+Though the value of the expressions are the same, observe that the code
+label is retained in one but removed from the other.
+
+As mentioned previously, Borgmon rules create new time-series, so the
+results of the computations are kept in the time-series arena and can be
+inspected just as the source time-series are. The ability to do so
+allows for ad hoc querying, evaluation, and exploration as tables or
+charts. This is a useful feature for debugging while on-call, and if
+these ad hoc queries prove useful, they can be made permanent
+visualization on a service console.
+
+## Alerting
+
+When an alerting rule is evaluated by a Borgmon, the result is either
+true, in which case the alert is triggered, or false. Experience shows
+that alerts can "flap" (toggle their state quickly); therefore, the
+rules allow a minimum duration for which the alerting rules must be true
+before the alert is sent. Typically, this duration is set to at least
+two rule evaluation cycles to ensure no missed collections cause a false
+alert.
+
+The following example creates an alert when the error ratio over 10
+minutes exceeds 1% and the total number of errors exceeds 1 per second:
+
+```
+rules <<<
+{var=dc:http_errors:ratio_rate10m,job=webserver} > 0.01 and by job, error
+{var=dc:http_errors:rate10m,job=webserver} > 1 for 2m
+=> ErrorRatioTooHigh
+details "webserver error ratio at %trigger_value%"
+labels { severity=page };
+>>>
+```
+
+Our example holds the ratio rate at 0.15, which is well over the
+threshold of 0.01 in the alerting rule. However, the number of errors is
+not greater than 1 at this moment, so the alert won't be active. Once
+the number of errors exceeds 1, the alert will go **pending** for two
+minutes to ensure it isn't a transient state, and only then will it
+**fire**.
+
+The alert rule contains a small template for filling out a message
+containing contextual information: which job the alert is for, the name
+of the alert, the numerical value of the triggering rule, and so on. The
+contextual information is filled out by Borgmon when the alert fires and
+is sent in the Alert RPC.
+
+Borgmon is connected to a centrally run service, known as the
+`Alertmanager`, which receives Alert RPCs when the rule first triggers,
+and then again when the alert is considered to be "firing." The
+`Alertmanager` is responsible for routing the alert notification to the
+correct destination. `Alertmanager` can be configured to do the following:
+
+* Inhibit certain alerts when others are active
+* Deduplicate alerts from multiple Borgmon that have the same labelsets
+* Fan-in or fan-out alerts based on their labelset when multiple alerts
+  with similar labelsets fire.
+
+As described in [Monitoring Distributed
+Systems](https://sre.google/sre-book/monitoring-distributed-systems/),
+teams send their page-worthy alerts to their on-call rotation and their
+important but subcritical alerts to their ticket queues. All other
+alerts should be retained as informational data for status dashboards.
+
+A more comprehensive guide to alert design can be found in [Service
+Level
+Objectives](https://sre.google/sre-book/service-level-objectives/).
+
+## Sharding the Monitoring Topology
+
+A Borgmon can import time-series data from other Borgmon, as well. While
+one could attempt to collect from all tasks in a service globally, doing
+so quickly becomes a scaling bottleneck and introduces a single point of
+failure into the design. Instead, a streaming protocol is used to
+transmit time-series data between Borgmon, saving CPU time and network
+bytes compared to the text-based `varz` format. A typical such deployment
+uses two or more global Borgmon for top-level aggregation and one
+Borgmon in each datacenter to monitor all the jobs running at that
+location. (Google divides the production network into zones for
+production changes, so having two or more global replicas provides
+diversity in the face of maintenance and outages for this otherwise
+single point of failure.)
+
+As shown in **Figure 10-3**, more complicated deployments shard the
+datacenter Borgmon further into a purely scraping-only layer (often due
+to RAM and CPU constraints in a single Borgmon for very large services)
+and a DC aggregation layer that performs mostly rule evaluation for
+aggregation. Sometimes the global layers is split between rule
+evaluation and dashboarding. Upper-tier Borgmon can filter the data they
+want to stream from the lower-tier Borgmon, so that the global Borgmon
+does not fill its arena with all the per-task time-series from the lower
+tiers. Thus, the aggregation hierarchy builds local caches of relevant
+time-series that can be drilled down into when required.
+
+![A data flow model of a hierarchy of Borgmon in three
+clusters](../../gcp-img/figure_10_3.jpg) Figure 10-3. A data flow model
+of a hierarchy of Borgmon in three clusters.
+
+## Block-Box Monitoring
+
+Borgmon is a white-box monitoring system-it inspects the internal state
+of the target service, and the rules are written with knowledge of the
+internals in mind. The transparent nature of this model provides great
+power to identify quickly what components are failing, which queues are
+full, and where bottlenecks occur, both when responding to an incident
+and when testing a new feature deployment.
 
 
 
