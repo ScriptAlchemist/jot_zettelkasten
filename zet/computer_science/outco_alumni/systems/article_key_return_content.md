@@ -61,3 +61,26 @@ We can handle around 1000 QPS max per servers
 Fetch from hard disk HDD: 10ms
 Fetch from SSD: 1ms
 memory is 10ms / 1000
+
+
+parento distribution: 80-20 rule
+
+80% of your requests are using 20% of the articles
+
+`20% * 10_000 TB = 2000 TB` will support 80% of traffic
+
+`2000 TB in memory`
+
+`80% * 100_000 = 80_000 QPS`
+
+8000 TB remaining
+
+`20% * 8000 TB = 1600 TB`  will support 80%
+
+`20% QPS` remaining
+
+`20_000 * 0.8 = 16_000 QPS`
+
+1600 TB in SSD: Support 16_000 QPS -> SSD 1ms
+
+6400 TB remaining storage: 4k QPS -> HDD 10ms

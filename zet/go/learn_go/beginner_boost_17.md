@@ -24,6 +24,21 @@
 * Initial cap means "export me"
 * Use `log` in unit tests when data varies `log.Println('words')`
 * Use default export every thing with `internal` with needed
+* Get started now finding great Go projects to study
+  ([`kind`](https://github.com/hubernetes-sigs/kind))
+* Get to know TJ Holowaychuk, [Fareware to
+  Node](https://medium.com/@tjholowaychuk/farewell-node-js-4ba9e7f3e52b)
+* How to loop up Go documentation (`go doc`, `? golang ...`)
+* Use Control-n/p for seeing all possible symbols in package
+* Use Shift-k to see pop-definitions
+* Why always create top-level libraries with `cmds` for commands
+* Use `/* */` and `//` for commenting
+* Concatenate operator `+`
+* Strings with double quotes and backticks (but never single quotes)
+* Using `os.Args` to get passed parameter arguments
+* Variadic argument signatures
+* Introduction to panic when reading off end of slice
+* Slicing a slice `[1:]`
 
 ## Covered
 
