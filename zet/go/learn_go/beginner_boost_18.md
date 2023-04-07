@@ -37,6 +37,15 @@ Bonus:
 * Testable examples
 * Don't repeat yourself
 * TDD vs Prototype Driven Development
+* Avoid interactive input (in general), prefer arguments or `env` variables
+* Runes
+* Line endings: `CR LF`, `LF`, `CR`
+* Danger of `line, _ := bufio.NewReader(os.Stdin).ReadString('\n')`
+* Basics of Unicode
+* Multiple return values
+* Ignored name `_` for a return value
+* Use of `internal` packages
+* Golang error handling philosophy
 
 ## Related
 
