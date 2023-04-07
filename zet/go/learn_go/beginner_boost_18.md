@@ -46,6 +46,12 @@ Bonus:
 * Ignored name `_` for a return value
 * Use of `internal` packages
 * Golang error handling philosophy
+* Don't forget to use `Printf("%q", thing)`
+* Comment function documentation
+* Checking documentation with `go doc -all .`
+* `K` to look up the docs of a function in Vim
+* `doc.go` convention to manage docs. Start with `Package internal` or
+  whatever the package is.
 
 ## Related
 
