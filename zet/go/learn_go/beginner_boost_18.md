@@ -14,12 +14,12 @@ Create a command that greets the user in their common language as detected from 
 * Combine all arguments into single argument
 * Write a separate function to read one line of standard input
 * If no arguments passed, greet generically, and prompt for name
-* Detect the language from the host system
-* Switch to language detected and print simple greeting in the language
-* Write code that could easily have additional languages added
 
 Bonus:
 
+* Detect the language from the host system
+* Switch to language detected and print simple greeting in the language
+* Write code that could easily have additional languages added
 * Add some interesting colors in the text output.
 
 ## Concepts
@@ -52,6 +52,8 @@ Bonus:
 * `K` to look up the docs of a function in Vim
 * `doc.go` convention to manage docs. Start with `Package internal` or
   whatever the package is.
+* Adding multiple commands to a single module repo
+
 
 ## Related
 
