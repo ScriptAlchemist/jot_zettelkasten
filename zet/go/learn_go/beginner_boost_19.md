@@ -67,6 +67,42 @@ converts it to an integer between 0 and 7 using the modulo operator
 this example for simplicity. In real-world application, you should
 handle the error appropriately
 
+## What about the closing file signals?
+
+Let's take a look at how we could use Signals to watch for the program
+being closed out.
+
+* Using the `os/signal` package
+* Create a channel to receive signals `sig := make(chan os.Signal, 1)`
+* Register the channel to receive interrupt signals `signal.Notify(sig,
+  os.Interrupt, syscall.SIGTERM)`
+* Start a `goroutine` to wait for signals:
+
+```go
+go func() {
+  <-sig
+  // Perform cleanup tasks before the program exits
+  fmt.Print("\033[?25h") // restore cursor visibility
+  os.Exit(1)
+}()
+```
+
+* `sig := make(chan os.Signal, 1)` This line of code creates a buffered
+  channel `sig` that can receive a signal from the operating system. The
+  channel has a buffer size of 1, which means it can hold one signal
+  value before blocking. The channel is used to receive signals sent to
+  the program, such as an interrupt signal (`SIGINT`) or termination
+  signal (`SIGTERM`). By creating a channel to receive these signals,
+  the  program can gracefully handle these signals and perform any
+  necessary cleanup before exiting.
+
+## How can we add a flag
+
+* `nameFlag := flag.String("n", "nyan", "Name to print in random
+  colors")`
+* `flag.Parse()`
+* `nameToPrint := *nameFlag
+
 ## Related
 
 * https://www.gnu.org/software/bash/manual/html_node/ANSI_002dC-Quoting.html
