@@ -117,7 +117,7 @@ import "fmt"
 
 ### Bubble Sort
 
-![Bubble Sort](../../images/go_algos/bubble_sort_graphic.png)
+![Bubble Sort](./go_imgs/bubble_sort_graphic.png)
 
 ```go
 func bubbleSort(arr []int) {
