@@ -20,7 +20,7 @@ environments, providing a stable platform while also giving us security
 and speed wins.
 
 ![vetting wasmtime in
-production](../../images/wasmtime_1.0/prod-timeline.png)
+production](./wasmtime_1.0/prod-timeline.png)
 
 Here are some of our experiences with the new, improved Wasmtime:
 
@@ -102,7 +102,7 @@ Here are a few use cases that we have seen people use Wasmtime for.
   isolation technologies.
 
 ![Devices connecting to a cloud that holds many instances fo a
-WebAssembly module](../../images/wasmtime_1.0/use-case_serverless.png)
+WebAssembly module](./wasmtime_1.0/use-case_serverless.png)
 
 ## Third Party Plugin Systems
 
@@ -121,7 +121,7 @@ WebAssembly module](../../images/wasmtime_1.0/use-case_serverless.png)
 ![Platform code standing on either side of a sandbox the contains
 WebAssembly code. The platform code passes data into the WebAssembly
 code, but the WebAssembly code is restructed form using any of the
-platform resources.](../../images/wasmtime_1.0/use-case_3rd-party.png)
+platform resources.](./wasmtime_1.0/use-case_3rd-party.png)
 
 ## Databases, Analytics & Event Streaming
 
@@ -146,7 +146,7 @@ platform resources.](../../images/wasmtime_1.0/use-case_3rd-party.png)
 
 ![On one side, a datbase making lots of slow calls to code. On the other
 side, the code running directly in the
-database](../../images/wasmtime_1.0/use-case_database.png)
+database](./wasmtime_1.0/use-case_database.png)
 
 ## Trusted Execution Environments
 
@@ -162,7 +162,7 @@ database](../../images/wasmtime_1.0/use-case_database.png)
 
 ![A CPU with a hypervisor and OS sitting on top of it, plus another,
 cordoned off section that contains the TEE wit the WebAssembly
-code.](../../images/wasmtime_1.0/use-case_tee.png)
+code.](./wasmtime_1.0/use-case_tee.png)
 
 ## Portable Clients
 
@@ -179,8 +179,8 @@ code.](../../images/wasmtime_1.0/use-case_tee.png)
 * You can focus on the features that you want your client to provide.
 
 ![An application window with a WebAssembly logo in it that is going to 3
-different devices: a phole, a laptop, and a VR
-headset](../../images/wasmtime_1.0/use-case_portable-client.png)
+different devices: a phone, a laptop, and a VR
+headset](./wasmtime_1.0/use-case_portable-client.png)
 
 Those are some use cases where you might want to use Wasmtime. Now let's
 talk about how we made sure Wasmtime could perform well for these use
@@ -217,7 +217,7 @@ As Chris points out in his post. with some of our recent changes:
 milliseconds... to 5 microseconds, or 400 times faster, not bad!
 
 ![A person saying '400 times faster... no
-bad!'](../../images/wasmtime_1.0/article-reference-chris.png)
+bad!'](./wasmtime_1.0/article-reference-chris.png)
 
 And that's just one example.
 
@@ -306,7 +306,7 @@ and you should read the for more detail, but here are a few examples:
   introduce new bugs.
 
 ![A person shouting 'Fuzz all the
-things!'](../../images/wasmtime_1.0/article-reference-nick.png)
+things!'](./wasmtime_1.0/article-reference-nick.png)
 
 So those are some of the ways that we make Wasmtime more secure.
 

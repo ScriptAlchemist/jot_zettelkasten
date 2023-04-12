@@ -46,11 +46,12 @@ But within the 3D community, people prefer to use different software and systems
 
 Here's an example of things that can be contained within the glb container format. This is a screenshot from a Blender file.
 
-![Here's another view of all the elements inside of the 3d file](../../../images/3d/inside_3dfile.png)
+![Here's another view of all the elements inside of the 3d
+file](./file_type_images/inside_3dfile.png)
 
 So you'll have your actual physical, 3D object in the 3D space. The "Mesh" of the 3D model, which has no color data or texture, no shading. Think of it just like your shaped piece of clay you have before you paint it of the blueprints of a house.
 
-![A screenshot of a 3D model `mesh`](../../../images/3d/3d_model_mesh.png)
+![A screenshot of a 3D model `mesh`](./file_type_images/3d_model_mesh.png)
 
 Separately, you will have your image textures and materials that essentially just add the paint to your piece of clay.
 
