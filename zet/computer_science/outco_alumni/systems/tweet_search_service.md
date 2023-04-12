@@ -2,7 +2,7 @@
 
 How can we do this and what are the functional requirements?
 
-![Tweet Search Diagram](../../../../images/outco_systems/outco_tweet_search_1.png)
+![Tweet Search Diagram](../outco_img/tweet_search_imgs/outco_tweet_search_1.png)
 
 ## Functional Requirements
 
@@ -22,7 +22,7 @@ How can we do this and what are the functional requirements?
   eventually after `k` *READS*, we will see the data in that *WRITE*.
 * `Weak`
 
-![Connecting across the world](../../../../images/outco_systems/outco_tweet_search_us_to_eu.png)
+![Connecting across the world](../outco_img/tweet_search_imgs/outco_tweet_search_us_to_eu.png)
 
 #### Why Eventual Consistency?
 
@@ -78,8 +78,8 @@ DOG: [D10, D11, ...]
 DOG -> D10, D11
 DOG FOOD -> Union? Intersection? Intersection followed by Union-intersection?
 ```
-
-![Union intersection](../../../../images/outco_systems/outco_tweet_search_union_intersection.png)
+../outco_img/tweet_search_imgs/
+![Union intersection](../outco_img/tweet_search_imgs/outco_tweet_search_union_intersection.png)
 
 1. How long does it take to build inverted index?
 2. How long does it take to perform intersection and union?
@@ -96,7 +96,7 @@ Lambda Architecture
 
 ### Kafka Queue Model
 
-![Kafka Queue Model](../../../../images/outco_systems/outco_tweet_search_kafka_queue_model.png)
+![Kafka Queue Model](../outco_img/tweet_search_imgs/outco_tweet_search_kafka_queue_model.png)
 
 
 Inverted index
