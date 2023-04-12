@@ -47,3 +47,53 @@ it is reasonable. In this case, we aim for a few hundred ms.
 * Search:
   - `Search(string phrase)`, returns a list of tweets
 
+### How do we search? What is our data model?
+
+What is our data model? How do we store tweets?
+
+* `Tweet`
+* `id`
+* `uid`
+* `message`
+* `imageUrl`
+
+* NoSQL, key value?
+  - A lot of write, also a lot of read.
+
+* Index based on Tweet is and user id.
+
+* Based on the message?
+
+```
+Inverted Index?
+
+String: [D1, D2, ...]
+
+Example:
+
+THE: [D1, D2, D3, D4, D5, D6, ...]
+FOOD: [D1, D2, D3, D4, ...]
+DOG: [D10, D11, ...]
+
+DOG -> D10, D11
+DOG FOOD -> Union? Intersection? Intersection followed by Union-intersection?
+```
+
+![Union intersection](../../../../images/outco_systems/outco_tweet_search_union_intersection.png)
+
+1. How long does it take to build inverted index?
+2. How long does it take to perform intersection and union?
+
+Lambda Architecture
+
+* `Batch`: detailed analysis of data in batches, and it can be slow. e.g.,
+  map reduce
+* `Speed`: processing data in real time and provide results quickly:
+  Storm, Flink
+* `Serving`: combining the results from both paths, and serve it to the
+  user.
+
+
+### Kafka Queue Model
+
+![Kafka Queue Model](../../../../images/outco_systems/outco_tweet_search_kafka_queue_model.png)
