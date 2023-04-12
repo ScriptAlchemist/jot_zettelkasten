@@ -140,12 +140,14 @@ func main() {
 
 ### Selection Sort
 
+![Selection Sort](./go_imgs/selection_sort_graphic.png)
+
 ```go
 func selectionSort(arr []int) {
   n := len(arr)
   for i := 0; i < n-1; i++ {
     minIdx := i
-    for j := i + i; j < n; j++ {
+    for j := i + 1; j < n; j++ {
       if arr[j] < arr[minIdx] {
         minIdx = j
       }
