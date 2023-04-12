@@ -138,9 +138,171 @@ func main() {
 }
 ```
 
+### Selection Sort
 
+```go
+func selectionSort(arr []int) {
+  n := len(arr)
+  for i := 0; i < n-1; i++ {
+    minIdx := i
+    for j := i + i; j < n; j++ {
+      if arr[j] < arr[minIdx] {
+        minIdx = j
+      }
+    }
+    arr[i], arr[minIdx] = arr[minIdx], arr[i]
+  }
+}
 
+func main() {
+  arr := []int{64, 34, 25, 12, 22, 11, 90}
+  selectionSort(arr)
+  fmt.Println("Sorted array is:", arr)
+}
+```
 
+### Insertion Sort
+
+```go
+func insertionSort(arr []int) {
+  for i := 1; i < len(arr); i++ {
+    key := arr[i]
+    j := i - 1
+
+    for j >= 0 && arr[j] > key {
+      arr[j+1] = arr[j]
+      j--
+    }
+    arr[j+1] = key
+  }
+}
+
+func main() {
+  arr := []int{64, 34, 25, 12, 22, 11, 90}
+  insertionSort(arr)
+  fmt.Println("Sorted array is:", arr)
+}
+```
+
+### Merge Sort
+
+```go
+func mergeSort(arr []int) []int {
+  if len(arr) <= 1 {
+    return arr
+  }
+
+  mid := len(arr) / 2
+  left := mergeSort(arr[:mid])
+  right := mergeSort(arr[mid:])
+
+  return merge(left, right)
+}
+
+func merge(left, right []int) []int {
+  result := make([]int, 0, len(left)+len(right))
+
+  for len(left) > 0 || len(right) > 0 {
+    if len(left) == 0 {
+      return append(result, right...)
+    }
+    if len(right) == 0 {
+      return append(result, left...)
+    }
+    if left[0] <= right[0] {
+      result = append(result, left[0])
+      left = left[1:]
+    } else {
+      result = append(result, right[0])
+      right = right[1:]
+    }
+  }
+
+  return result
+}
+
+func main() {
+  arr := []int{64, 34, 25, 12, 22, 11, 90}
+  sortedArr := mergeSort(arr)
+  fmt.Println("Sorted array is:", sortedArr)
+}
+```
+
+### Quick Sort
+
+```go
+func partition(arr []int, low, high int) int {
+  pivot := arr[high]
+  i := low - 1
+
+  for j := low; j <= high - 1; j++ {
+    if arr[j] < pivot {
+      i++
+      arr[i], arr[j] = arr[j], arr[i]
+    }
+  }
+  arr[i + 1], arr[high] = arr[high], arr[i + 1]
+  return i + 1
+}
+
+func quickSort(arr []int, low, high int) {
+  if low < high {
+    pivot := partition(arr, low, high)
+    quickSort(arr, low, pivot - 1)
+    quickSort(arr, pivot + 1, high)
+  }
+}
+
+func main() {
+  arr := []int{64, 34, 25, 12, 22, 11, 90}
+  quickSort(arr, 0, len(arr) - 1)
+  fmt.Println("Sorted array is:", arr)
+}
+```
+
+### Heap Sort
+
+```go
+func heapify(arr []int, n, i int) {
+  largest := i
+  left := 2*i + 1
+  right := 2*i + 2
+
+  if left < n && arr[left] > arr[largest] {
+    largest = left
+  }
+
+  if right < n && arr[right] > arr[largest] {
+    largest = right
+  }
+
+  if largest != i {
+    arr[i], arr[largest] = arr[largest, arr[i]
+    heapify(arr, n, largest)
+  }
+}
+
+func heapSort(arr []int) {
+  n := len(arr)
+
+  // Build a max heap
+  for i := n/2 - 1; i >= 0; i-- {
+    heapify(arr, n, i)
+  }
+
+  // Extract elements from heap on by one
+  for i := n - 1; i > 0; i-- {
+    arr[0], arr[i] = arr[i], arr[0]
+    heapify(arr, i, 0)
+  }
+}
+
+func main() {
+  arr := []int{64, 34, 25, 12, 22, 11, 90}
+  heapSort(arr)
+  fmt.Println("Sorted array is:", arr)
+}
+```
 
 
 

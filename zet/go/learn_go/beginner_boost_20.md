@@ -5,3 +5,10 @@
 * You need to import `testing`
 * `TestPrint(t *testing.T)`
 
+
+## Covered
+
+* Basic idea of what functional programming paradigm
+* 
+
+
