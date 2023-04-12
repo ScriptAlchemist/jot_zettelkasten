@@ -97,3 +97,48 @@ Lambda Architecture
 ### Kafka Queue Model
 
 ![Kafka Queue Model](../../../../images/outco_systems/outco_tweet_search_kafka_queue_model.png)
+
+
+Inverted index
+Intersections
+
+* `Intersection of list1 and list2`. What if their sizes are huge?
+* `Approach1`: put them in a set
+* `Approach2`: Sort the lists, then merge them: mergesort, bucket sort
+
+* `External sort`: your entire collection does not fit in memory, so we put
+it on external storage. We bring a subset of the data in the internal
+memory to sort and then write the result on disk
+
+#### Sharding
+
+`Document based`:
+
+* *Read*: O(Shard)
+* *Write*: O(1)
+
+```
+         |     |    |    |         |
+THE: [D1,| D2, | D3,| D4,| D5, D6, |...]
+FOOD:[D1,| D2, | D3,| D4,| ...     |D100]
+DOG: [D1,|     | D3,| ...|]        |D100]
+         |     |    |    |         |
+```
+
+`Term based`:
+
+* *Read*: you don't read from all shards. O(Terms)
+* *Write*: O(Terms)
+
+```
+THE: [D1, D2, D3, D4, D5, D6, ...]
+----------------------------------
+FOOD:[D1, D2, D3, D4, ...]
+----------------------------------
+DOG: [D1,     D3, ...]
+```
+
+What are some problems with the lambda architecture?
+
+* lower quality for real time queries
+* Maintenance of two paths is not easy
