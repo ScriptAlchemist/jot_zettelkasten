@@ -21,9 +21,14 @@
 * Use of `flags` for options and complex argument
 * What about `cobra`?
 * What about `bonzai`?
+* Example based testing vs "testing" package testing
 * Mandatory rand against "getopt"
-Factoring out commonly used code into own library modules
-* Using `go work` to avoid package problems
+* Interval notation
+* Factoring out commonly used code into own library modules
+* Using `go work` to avoid package `dep` dependency problems
+* Using `go get` to update dependencies
+* Learned to use `@2022` because of `boost` repo branch
+* Finish magic `eightball`
 
 
 

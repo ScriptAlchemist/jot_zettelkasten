@@ -55,3 +55,29 @@ What info is needed by the node to calculate it's tilt.
   - `Global Tilt = Global Lilt + Local`
 
 * Return node.value + left + right
+
+
+```go
+type TreeNode struct {
+    Val   int
+    Left  *TreeNode
+    Right *TreeNode
+}
+
+func findTilt(root *TreeNode) int {
+    var helper func(*TreeNode) (int, float64)
+    helper = func(node *TreeNode) (int, float64) {
+        if node == nil {
+            return 0, 0
+        }
+        leftSum, leftTilt := helper(node.Left)
+        rightSum, rightTilt := helper(node.Right)
+        nodeTilt := math.Abs(float64(leftSum - rightSum))
+        subtreeSum := leftSum + rightSum + node.Val
+        subtreeTilt := leftTilt + rightTilt + nodeTilt
+        return subtreeSum, subtreeTilt
+    }
+    _, tilt := helper(root)
+    return int(tilt)
+}
+```
